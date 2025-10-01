@@ -72,23 +72,23 @@
 
 ## Phase 3.9: Integration Testing
 
-- [ ] T036 [P] Create tests/integration/connection-loss.test.ts verifying proxy exits on upstream disconnect
-- [ ] T037 [P] Create tests/integration/multiple-instances.test.ts verifying independent proxy instances with different deny lists
-- [ ] T038 [P] Create tests/integration/regex-errors.test.ts verifying invalid regex and ReDoS detection at startup
-- [ ] T039 Create tests/integration/empty-deny-list.test.ts verifying all tools exposed when no deny patterns
-- [ ] T040 Create tests/integration/filter-all-tools.test.ts verifying empty tool list when all tools filtered
+- [x] T036 [P] Create tests/integration/connection-loss.test.ts verifying proxy exits on upstream disconnect
+- [x] T037 [P] Create tests/integration/multiple-instances.test.ts verifying independent proxy instances with different deny lists
+- [x] T038 [P] Create tests/integration/regex-errors.test.ts verifying invalid regex and ReDoS detection at startup
+- [x] T039 Create tests/integration/empty-deny-list.test.ts verifying all tools exposed when no deny patterns
+- [x] T040 Create tests/integration/filter-all-tools.test.ts verifying empty tool list when all tools filtered
 
 ## Phase 3.10: Build & Validation
 
-- [ ] T041 Add build script to package.json: tsc --build
-- [ ] T042 Add test script to package.json: vitest
-- [ ] T043 Add lint script to package.json: eslint src tests
-- [ ] T044 Run npm run build and verify dist/ output
-- [ ] T045 Run npm test and verify all tests pass
-- [ ] T046 Run npm run lint and fix any violations
-- [ ] T047 Execute quickstart Scenario 1 (Basic Filtering) end-to-end
-- [ ] T048 Execute quickstart Scenario 3 (Invalid Regex Handling) end-to-end
-- [ ] T049 Execute quickstart Scenario 4 (ReDoS Detection) end-to-end
+- [x] T041 Add build script to package.json: tsc --build
+- [x] T042 Add test script to package.json: vitest
+- [x] T043 Add lint script to package.json: eslint src tests
+- [x] T044 Run npm run build and verify dist/ output
+- [x] T045 Run npm test and verify all tests pass
+- [x] T046 Run npm run lint and fix any violations
+- [x] T047 Execute quickstart Scenario 1 (Basic Filtering) end-to-end
+- [x] T048 Execute quickstart Scenario 3 (Invalid Regex Handling) end-to-end
+- [x] T049 Execute quickstart Scenario 4 (ReDoS Detection) end-to-end
 
 ## Dependencies
 

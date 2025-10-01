@@ -9,7 +9,7 @@ export interface RegexValidationResult {
 export function validateRegexPattern(pattern: string): RegexValidationResult {
   try {
     new RegExp(pattern);
-  } catch (error) {
+  } catch {
     return {
       valid: false,
       safe: false,

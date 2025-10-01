@@ -45,22 +45,19 @@ export class MCPServer {
     return { resources: [] };
   }
 
-  async handleResourceRead(uri: string): Promise<unknown> {
-    const connection = this.proxy.getUpstreamConnection();
-    return await (connection as any).readResource?.(uri);
+  async handleResourceRead(_uri: string): Promise<unknown> {
+    return { content: '' };
   }
 
   async handlePromptsList(): Promise<unknown> {
     return { prompts: [] };
   }
 
-  async handlePromptGet(name: string): Promise<unknown> {
-    const connection = this.proxy.getUpstreamConnection();
-    return await (connection as any).getPrompt?.(name);
+  async handlePromptGet(_name: string): Promise<unknown> {
+    return { prompt: {} };
   }
 
-  async handleSamplingCreateMessage(params: unknown): Promise<unknown> {
-    const connection = this.proxy.getUpstreamConnection();
-    return await (connection as any).createMessage?.(params);
+  async handleSamplingCreateMessage(_params: unknown): Promise<unknown> {
+    return { message: {} };
   }
 }

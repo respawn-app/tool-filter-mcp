@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { UpstreamConnection } from '../../src/upstream-client.js';
-import { MockMCPServer, createMockServer, createFailingMockServer, createSlowMockServer } from '../fixtures/mock-mcp-server.js';
+import { createMockServer, createFailingMockServer, createSlowMockServer } from '../fixtures/mock-mcp-server.js';
 import { sampleTools } from '../fixtures/sample-tools.js';
 
 describe('UpstreamConnection', () => {

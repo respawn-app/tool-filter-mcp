@@ -49,7 +49,7 @@ function parseCLIArgs(): CLIArgs {
 
   try {
     new URL(upstream);
-  } catch (error) {
+  } catch {
     console.error(`Error: Invalid upstream URL: ${upstream}`);
     process.exit(1);
   }
@@ -76,7 +76,7 @@ function createProxyConfig(args: CLIArgs): ProxyConfig {
   };
 }
 
-async function createUpstreamClient(upstreamUrl: string): Promise<any> {
+async function createUpstreamClient(upstreamUrl: string): Promise<Client> {
   const transport = new SSEClientTransport(new URL(upstreamUrl));
   const client = new Client(
     {
@@ -130,7 +130,10 @@ async function main(): Promise<void> {
       process.exit(0);
     });
 
-    await new Promise(() => {});
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    new Promise<void>(() => {
+      // Intentionally keep process running until signal
+    });
   } catch (error) {
     const errorMessage = formatStartupError(error);
     console.error(`Error: ${errorMessage}`);
@@ -138,4 +141,4 @@ async function main(): Promise<void> {
   }
 }
 
-main();
+void main();

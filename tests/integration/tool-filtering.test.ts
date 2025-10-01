@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { MCPServer } from '../../src/server.js';
 import { ProxyOrchestrator } from '../../src/proxy.js';
 import { ProxyConfig } from '../../src/types.js';
