@@ -6,3 +6,11 @@ coverage/
 .env
 .env.local
 *.tsbuildinfo
+/.idea/codeStyles/codeStyleConfig.xml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/prettier.xml
+/.idea/codeStyles/Project.xml
+/.idea/inspectionProfiles/Project_Default.xml
+/.idea/tool-filter-mcp.iml
+/.idea/vcs.xml

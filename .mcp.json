@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "jetbrains-filtered": {
+      "command": "node",
+      "args": [
+        "dist/index.js",
+        "--upstream",
+        "http://localhost:64342/sse",
+        "--deny",
+        "get_file_text_by_path,create_new_file,replace_text_in_file,reformat_file"
+      ],
+      "type": "stdio"
+    },
+    "deepwiki": {
+      "type": "sse",
+      "url": "https://mcp.deepwiki.com/sse"
+    }
+  }
+}

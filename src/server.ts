@@ -1,63 +1,58 @@
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+  Tool,
+} from '@modelcontextprotocol/sdk/types.js';
 import { ProxyOrchestrator } from './proxy.js';
-import { FilteredTool } from './types.js';
 
-export interface MCPToolCallError extends Error {
-  code: number;
-  message: string;
-}
+export async function createMCPServer(proxy: ProxyOrchestrator): Promise<Server> {
+  const server = new Server(
+    {
+      name: 'tool-filter-mcp',
+      version: '0.1.0',
+    },
+    {
+      capabilities: {
+        tools: {},
+      },
+    }
+  );
 
-export class MCPServer {
-  private proxy: ProxyOrchestrator;
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    const tools = proxy.getCachedTools();
+    return {
+      tools: tools.map(
+        (t): Tool => ({
+          name: t.name,
+          description: t.description,
+          inputSchema: {
+            type: 'object',
+            ...t.inputSchema,
+          },
+        })
+      ),
+    };
+  });
 
-  constructor(proxy: ProxyOrchestrator) {
-    this.proxy = proxy;
-  }
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    const { name, arguments: args } = request.params;
 
-  async handleListTools(): Promise<{ tools: FilteredTool[] }> {
-    const tools = this.proxy.getCachedTools();
-    return { tools };
-  }
-
-  async handleCallTool(name: string, args: Record<string, unknown>): Promise<unknown> {
-    if (!this.proxy.isToolAllowed(name)) {
-      const error = new Error(`Tool not found: ${name}`) as MCPToolCallError;
-      error.code = -32601;
-      throw error;
+    if (!proxy.isToolAllowed(name)) {
+      throw {
+        code: -32601,
+        message: `Tool not found: ${name}`,
+      };
     }
 
-    const connection = this.proxy.getUpstreamConnection();
-    return await connection.callTool(name, args);
-  }
+    const connection = proxy.getUpstreamConnection();
+    const result = await connection.callTool(name, args || {});
+    return result as { content?: unknown[]; isError?: boolean };
+  });
 
-  supportsResources(): boolean {
-    return true;
-  }
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
 
-  supportsPrompts(): boolean {
-    return true;
-  }
-
-  supportsSampling(): boolean {
-    return true;
-  }
-
-  async handleResourcesList(): Promise<unknown> {
-    return { resources: [] };
-  }
-
-  async handleResourceRead(_uri: string): Promise<unknown> {
-    return { content: '' };
-  }
-
-  async handlePromptsList(): Promise<unknown> {
-    return { prompts: [] };
-  }
-
-  async handlePromptGet(_name: string): Promise<unknown> {
-    return { prompt: {} };
-  }
-
-  async handleSamplingCreateMessage(_params: unknown): Promise<unknown> {
-    return { message: {} };
-  }
+  return server;
 }

@@ -3,7 +3,7 @@
 import { parseArgs } from 'node:util';
 import { ProxyConfig } from './types.js';
 import { ProxyOrchestrator } from './proxy.js';
-import { MCPServer } from './server.js';
+import { createMCPServer } from './server.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { formatStartupError } from './utils/error-handler.js';
@@ -11,7 +11,6 @@ import { formatStartupError } from './utils/error-handler.js';
 interface CLIArgs {
   upstream: string;
   deny?: string;
-  port?: number;
 }
 
 function parseCLIArgs(): CLIArgs {
@@ -25,27 +24,17 @@ function parseCLIArgs(): CLIArgs {
         type: 'string',
         short: 'd',
       },
-      port: {
-        type: 'string',
-        short: 'p',
-      },
     },
   });
 
   if (!values.upstream) {
     console.error('Error: --upstream argument is required');
-    console.error('Usage: tool-filter-mcp --upstream <url> [--deny <patterns>] [--port <port>]');
+    console.error('Usage: tool-filter-mcp --upstream <url> [--deny <patterns>]');
     process.exit(1);
   }
 
   const upstream = values.upstream;
   const deny = values.deny;
-  const port = values.port ? parseInt(values.port, 10) : 3001;
-
-  if (values.port && isNaN(port)) {
-    console.error(`Error: Invalid port number: ${values.port}`);
-    process.exit(1);
-  }
 
   try {
     new URL(upstream);
@@ -57,7 +46,6 @@ function parseCLIArgs(): CLIArgs {
   return {
     upstream,
     deny,
-    port,
   };
 }
 
@@ -76,7 +64,15 @@ function createProxyConfig(args: CLIArgs): ProxyConfig {
   };
 }
 
-async function createUpstreamClient(upstreamUrl: string): Promise<Client> {
+interface WrappedClient {
+  connect(): Promise<void>;
+  listTools(): Promise<{ tools: { name: string; description?: string; inputSchema: object }[] }>;
+  callTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  disconnect(): void;
+  isConnected(): boolean;
+}
+
+async function createUpstreamClient(upstreamUrl: string): Promise<WrappedClient> {
   const transport = new SSEClientTransport(new URL(upstreamUrl));
   const client = new Client(
     {
@@ -88,8 +84,28 @@ async function createUpstreamClient(upstreamUrl: string): Promise<Client> {
     }
   );
 
-  await client.connect(transport);
-  return client;
+  let connected = false;
+
+  return {
+    async connect() {
+      await client.connect(transport);
+      connected = true;
+    },
+    async listTools() {
+      const result = await client.listTools();
+      return result as { tools: { name: string; description?: string; inputSchema: object }[] };
+    },
+    async callTool(name: string, args: Record<string, unknown>) {
+      return await client.callTool({ name, arguments: args });
+    },
+    disconnect() {
+      void client.close();
+      connected = false;
+    },
+    isConnected() {
+      return connected;
+    },
+  };
 }
 
 async function main(): Promise<void> {
@@ -113,26 +129,23 @@ async function main(): Promise<void> {
       console.error(`Deny patterns: ${config.denyPatterns.join(', ')}`);
     }
 
-    new MCPServer(proxy);
+    const server = await createMCPServer(proxy);
 
-    console.error(`MCP proxy server running on port ${args.port}`);
+    console.error('MCP proxy server running on stdio');
     console.error('Press Ctrl+C to stop');
 
     process.on('SIGINT', () => {
       console.error('\nShutting down...');
       proxy.shutdown();
+      void server.close();
       process.exit(0);
     });
 
     process.on('SIGTERM', () => {
       console.error('\nShutting down...');
       proxy.shutdown();
+      void server.close();
       process.exit(0);
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    new Promise<void>(() => {
-      // Intentionally keep process running until signal
     });
   } catch (error) {
     const errorMessage = formatStartupError(error);
