@@ -57,11 +57,11 @@
 
 ## Phase 3.7: MCP Server
 
-- [ ] T027 Create src/server.ts implementing MCP Server with SSEServerTransport from SDK
-- [ ] T028 Implement listTools() handler in src/server.ts returning cached filtered tools
-- [ ] T029 Implement callTool() handler in src/server.ts: check allowed → forward to upstream or reject
-- [ ] T030 Implement passthrough handlers in src/server.ts for resources, prompts, sampling (forward unmodified)
-- [ ] T031 Create tests/integration/tool-filtering.test.ts with scenarios from quickstart (basic filtering, denied tool call)
+- [x] T027 Create src/server.ts implementing MCP Server with SSEServerTransport from SDK
+- [x] T028 Implement listTools() handler in src/server.ts returning cached filtered tools
+- [x] T029 Implement callTool() handler in src/server.ts: check allowed → forward to upstream or reject
+- [x] T030 Implement passthrough handlers in src/server.ts for resources, prompts, sampling (forward unmodified)
+- [x] T031 Create tests/integration/tool-filtering.test.ts with scenarios from quickstart (basic filtering, denied tool call)
 
 ## Phase 3.8: CLI Entry Point
 
