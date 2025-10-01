@@ -65,10 +65,10 @@
 
 ## Phase 3.8: CLI Entry Point
 
-- [ ] T032 Create src/index.ts with CLI argument parsing using Node.js built-in parseArgs or minimist
-- [ ] T033 Implement --upstream and --deny argument validation in src/index.ts
-- [ ] T034 Implement startup error handling in src/index.ts (invalid regex, connection failure, exit code 1)
-- [ ] T035 Wire up proxy + server in src/index.ts and start HTTP server for SSE transport
+- [x] T032 Create src/index.ts with CLI argument parsing using Node.js built-in parseArgs or minimist
+- [x] T033 Implement --upstream and --deny argument validation in src/index.ts
+- [x] T034 Implement startup error handling in src/index.ts (invalid regex, connection failure, exit code 1)
+- [x] T035 Wire up proxy + server in src/index.ts and start HTTP server for SSE transport
 
 ## Phase 3.9: Integration Testing
 
