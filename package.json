@@ -1,0 +1,41 @@
+{
+  "name": "tool-filter-mcp",
+  "version": "0.1.0",
+  "description": "MCP proxy server that filters tools from upstream MCP servers via regex-based deny list",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "tool-filter-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "test": "vitest",
+    "lint": "eslint src tests",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\""
+  },
+  "keywords": [
+    "mcp",
+    "proxy",
+    "tool-filter",
+    "model-context-protocol"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "safe-regex2": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "@typescript-eslint/eslint-plugin": "^8.20.0",
+    "@typescript-eslint/parser": "^8.20.0",
+    "eslint": "^9.18.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

@@ -22,3 +22,4 @@ TypeScript 5.x with strict mode enabled: Follow standard conventions
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
+- do not run `npm test` commands that launch an interactive command line as foreground bashes. use non-interactive options or BG shells.

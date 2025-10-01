@@ -13,20 +13,20 @@
 
 ## Phase 3.1: Setup
 
-- [ ] T001 Create package.json with TypeScript, MCP SDK, Vitest, ESLint, Prettier dependencies
-- [ ] T002 Create tsconfig.json with strict mode, Node.js 20+ target, ESM module
-- [ ] T003 [P] Create .eslintrc.json with TypeScript rules and code quality standards
-- [ ] T004 [P] Create .prettierrc with consistent formatting rules
-- [ ] T005 Create vitest.config.ts for unit and integration test configuration
-- [ ] T006 Create .gitignore with node_modules, dist, coverage directories
+- [x] T001 Create package.json with TypeScript, MCP SDK, Vitest, ESLint, Prettier dependencies
+- [x] T002 Create tsconfig.json with strict mode, Node.js 20+ target, ESM module
+- [x] T003 [P] Create .eslintrc.json with TypeScript rules and code quality standards
+- [x] T004 [P] Create .prettierrc with consistent formatting rules
+- [x] T005 Create vitest.config.ts for unit and integration test configuration
+- [x] T006 Create .gitignore with node_modules, dist, coverage directories
 
 ## Phase 3.2: Types & Utilities (No Dependencies)
 
-- [ ] T007 [P] Create src/types.ts with ProxyConfig, FilteredTool, ToolFilterResult, ConnectionError interfaces
-- [ ] T008 [P] Create src/utils/regex-validator.ts implementing safe-regex2 ReDoS detection
-- [ ] T009 [P] Create src/utils/error-handler.ts for safe error message formatting (no stack traces)
-- [ ] T010 [P] Create tests/unit/regex-validator.test.ts with valid/invalid/unsafe regex test cases
-- [ ] T011 [P] Create tests/unit/error-handler.test.ts verifying no internal details leak
+- [x] T007 [P] Create src/types.ts with ProxyConfig, FilteredTool, ToolFilterResult, ConnectionError interfaces
+- [x] T008 [P] Create src/utils/regex-validator.ts implementing safe-regex2 ReDoS detection
+- [x] T009 [P] Create src/utils/error-handler.ts for safe error message formatting (no stack traces)
+- [x] T010 [P] Create tests/unit/regex-validator.test.ts with valid/invalid/unsafe regex test cases
+- [x] T011 [P] Create tests/unit/error-handler.test.ts verifying no internal details leak
 
 ## Phase 3.3: Core Logic
 
