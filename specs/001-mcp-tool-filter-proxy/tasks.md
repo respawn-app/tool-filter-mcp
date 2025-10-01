@@ -36,8 +36,8 @@
 
 ## Phase 3.4: Test Infrastructure
 
-- [ ] T015 Create tests/fixtures/mock-mcp-server.ts providing test MCP server with configurable tool list
-- [ ] T016 [P] Create tests/fixtures/sample-tools.ts with test tool definitions (read_file, write_file, list_dir, get_env)
+- [x] T015 Create tests/fixtures/mock-mcp-server.ts providing test MCP server with configurable tool list
+- [x] T016 [P] Create tests/fixtures/sample-tools.ts with test tool definitions (read_file, write_file, list_dir, get_env)
 
 ## Phase 3.5: Upstream Client
 
