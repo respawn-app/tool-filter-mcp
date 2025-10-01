@@ -15,3 +15,4 @@ coverage/
 /.idea/tool-filter-mcp.iml
 /.idea/vcs.xml
 /docs/tmp/
+/specs/
