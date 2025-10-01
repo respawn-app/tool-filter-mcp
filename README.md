@@ -1,3 +1,6 @@
+# tool-filter-mcp
+
+[![npm version](https://badge.fury.io/js/@respawn-app%2Ftool-filter-mcp.svg)](https://www.npmjs.com/package/@respawn-app/tool-filter-mcp)
 
 MCP proxy server that filters tools from upstream MCP servers via regex-based deny list.
 
@@ -26,7 +29,7 @@ This project is fully vibe-coded with claude. Contributions welcome!
 ## Installation
 
 ```bash
-npx tool-filter-mcp --upstream <url> --deny <patterns>
+npx @respawn-app/tool-filter-mcp --upstream <url> --deny <patterns>
 ```
 
 ## Usage
@@ -36,7 +39,7 @@ npx tool-filter-mcp --upstream <url> --deny <patterns>
 Filter tools matching `.*_file$` pattern:
 
 ```bash
-npx tool-filter-mcp \
+npx @respawn-app/tool-filter-mcp \
   --upstream http://localhost:3000/sse \
   --deny ".*_file$"
 ```
@@ -46,7 +49,7 @@ npx tool-filter-mcp \
 Use comma-separated patterns:
 
 ```bash
-npx tool-filter-mcp \
+npx @respawn-app/tool-filter-mcp \
   --upstream http://localhost:3000/sse \
   --deny "get_file_text,create_new_file,replace_text"
 ```
@@ -61,7 +64,7 @@ Add to your `.mcp.json`:
     "filtered-server": {
       "command": "npx",
       "args": [
-        "tool-filter-mcp",
+        "@respawn-app/tool-filter-mcp",
         "--upstream",
         "http://localhost:3000/sse",
         "--deny",
