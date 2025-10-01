@@ -49,11 +49,11 @@
 
 ## Phase 3.6: Proxy Orchestration
 
-- [ ] T022 Create src/proxy.ts implementing main proxy orchestration logic
-- [ ] T023 Implement startup sequence in src/proxy.ts: parse config → connect → fetch tools → filter → cache
-- [ ] T024 Implement getCachedTools() method in src/proxy.ts returning immutable filtered tool list
-- [ ] T025 Implement isToolAllowed(name: string) method in src/proxy.ts checking against cache
-- [ ] T026 Create tests/integration/proxy-startup.test.ts verifying startup sequence and error handling
+- [x] T022 Create src/proxy.ts implementing main proxy orchestration logic
+- [x] T023 Implement startup sequence in src/proxy.ts: parse config → connect → fetch tools → filter → cache
+- [x] T024 Implement getCachedTools() method in src/proxy.ts returning immutable filtered tool list
+- [x] T025 Implement isToolAllowed(name: string) method in src/proxy.ts checking against cache
+- [x] T026 Create tests/integration/proxy-startup.test.ts verifying startup sequence and error handling
 
 ## Phase 3.7: MCP Server
 
