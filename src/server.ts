@@ -7,6 +7,54 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { ProxyOrchestrator } from './proxy.js';
 
+export class MCPServer {
+  private proxy: ProxyOrchestrator;
+
+  constructor(proxy: ProxyOrchestrator) {
+    this.proxy = proxy;
+  }
+
+  async handleListTools(): Promise<{ tools: Tool[] }> {
+    const tools = this.proxy.getCachedTools();
+    return {
+      tools: tools.map(
+        (t): Tool => ({
+          name: t.name,
+          description: t.description,
+          inputSchema: {
+            type: 'object',
+            ...t.inputSchema,
+          },
+        })
+      ),
+    };
+  }
+
+  async handleCallTool(
+    name: string,
+    args: Record<string, unknown>
+  ): Promise<{ content?: unknown[]; isError?: boolean }> {
+    if (!this.proxy.isToolAllowed(name)) {
+      throw {
+        code: -32601,
+        message: `Tool not found: ${name}`,
+      };
+    }
+
+    const connection = this.proxy.getUpstreamConnection();
+    const result = await connection.callTool(name, args || {});
+    return result as { content?: unknown[]; isError?: boolean };
+  }
+
+  supportsResources(): boolean {
+    return true;
+  }
+
+  supportsPrompts(): boolean {
+    return true;
+  }
+}
+
 export async function createMCPServer(proxy: ProxyOrchestrator): Promise<Server> {
   const server = new Server(
     {
