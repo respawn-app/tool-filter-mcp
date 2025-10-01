@@ -8,21 +8,7 @@ export interface RegexValidationResult {
 
 export function validateRegexPattern(pattern: string): RegexValidationResult {
   try {
-    const regex = new RegExp(pattern);
-    const isSafe = safeRegex(pattern);
-
-    if (!isSafe) {
-      return {
-        valid: true,
-        safe: false,
-        error: `Unsafe regex pattern detected: ${pattern}\nPattern could cause catastrophic backtracking`,
-      };
-    }
-
-    return {
-      valid: true,
-      safe: true,
-    };
+    new RegExp(pattern);
   } catch (error) {
     return {
       valid: false,
@@ -30,6 +16,21 @@ export function validateRegexPattern(pattern: string): RegexValidationResult {
       error: `Invalid regex pattern in deny list: ${pattern}\nPattern must be valid JavaScript regex`,
     };
   }
+
+  const isSafe = safeRegex(pattern);
+
+  if (!isSafe) {
+    return {
+      valid: true,
+      safe: false,
+      error: `Unsafe regex pattern detected: ${pattern}\nPattern could cause catastrophic backtracking`,
+    };
+  }
+
+  return {
+    valid: true,
+    safe: true,
+  };
 }
 
 export function validateRegexPatterns(patterns: string[]): RegexValidationResult {

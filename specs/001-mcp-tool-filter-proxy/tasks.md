@@ -41,11 +41,11 @@
 
 ## Phase 3.5: Upstream Client
 
-- [ ] T017 Create src/upstream-client.ts implementing UpstreamConnection class with MCP SDK client
-- [ ] T018 Implement connect() method in src/upstream-client.ts with 30s timeout
-- [ ] T019 Implement fetchTools() method in src/upstream-client.ts with 10s timeout
-- [ ] T020 Implement connection loss monitoring in src/upstream-client.ts (exit on error)
-- [ ] T021 Create tests/integration/upstream-client.test.ts with connection success/timeout/loss scenarios
+- [x] T017 Create src/upstream-client.ts implementing UpstreamConnection class with MCP SDK client
+- [x] T018 Implement connect() method in src/upstream-client.ts with 30s timeout
+- [x] T019 Implement fetchTools() method in src/upstream-client.ts with 10s timeout
+- [x] T020 Implement connection loss monitoring in src/upstream-client.ts (exit on error)
+- [x] T021 Create tests/integration/upstream-client.test.ts with connection success/timeout/loss scenarios
 
 ## Phase 3.6: Proxy Orchestration
 
