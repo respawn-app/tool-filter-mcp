@@ -30,9 +30,9 @@
 
 ## Phase 3.3: Core Logic
 
-- [ ] T012 Create src/filter.ts implementing RegexFilter class with pattern compilation and tool matching
-- [ ] T013 Create tests/unit/filter.test.ts with filtering scenarios from quickstart (allow all, deny patterns, regex matching)
-- [ ] T014 Implement applyFilters() function in src/filter.ts returning ToolFilterResult with allowed/denied/invalidPatterns
+- [x] T012 Create src/filter.ts implementing RegexFilter class with pattern compilation and tool matching
+- [x] T013 Create tests/unit/filter.test.ts with filtering scenarios from quickstart (allow all, deny patterns, regex matching)
+- [x] T014 Implement applyFilters() function in src/filter.ts returning ToolFilterResult with allowed/denied/invalidPatterns
 
 ## Phase 3.4: Test Infrastructure
 
