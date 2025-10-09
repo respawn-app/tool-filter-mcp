@@ -132,10 +132,23 @@ export function formatToolsList(tools: Tool[], format: ToolListFormat): string {
       const header = `Available tools (${tools.length} total):\n`;
       const maxNameLength = Math.max(...tools.map((t) => t.name.length), 20);
       const separator = '\n';
+      const maxDescLength = 100;
 
       const rows = tools.map((tool) => {
         const name = tool.name.padEnd(maxNameLength + 2);
-        const desc = tool.description || '(no description)';
+        let desc = tool.description || '(no description)';
+
+        // Truncate to first line and max length
+        const firstLine = desc.split('\n')[0];
+        if (firstLine.length > maxDescLength) {
+          desc = firstLine.substring(0, maxDescLength) + '...';
+        } else if (firstLine !== desc) {
+          // Multi-line description - show first line with ellipsis
+          desc = firstLine + '...';
+        } else {
+          desc = firstLine;
+        }
+
         return `${name}${desc}`;
       });
 

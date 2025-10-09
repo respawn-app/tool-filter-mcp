@@ -117,6 +117,36 @@ describe('formatToolsList', () => {
       const result = formatToolsList(singleTool, 'table');
       expect(result).toContain('Available tools (1 total)');
     });
+
+    it('should truncate long descriptions to 100 characters', () => {
+      const tools = [
+        {
+          name: 'long_desc',
+          description: 'A'.repeat(150), // 150 character description
+          inputSchema: {},
+        },
+      ];
+      const result = formatToolsList(tools, 'table');
+
+      // Should contain first 100 chars + "..."
+      expect(result).toContain('A'.repeat(100) + '...');
+      expect(result).not.toContain('A'.repeat(101));
+    });
+
+    it('should show only first line of multi-line descriptions', () => {
+      const tools = [
+        {
+          name: 'multiline',
+          description: 'First line\nSecond line\nThird line',
+          inputSchema: {},
+        },
+      ];
+      const result = formatToolsList(tools, 'table');
+
+      expect(result).toContain('First line...');
+      expect(result).not.toContain('Second line');
+      expect(result).not.toContain('Third line');
+    });
   });
 
   describe('edge cases', () => {
@@ -143,7 +173,10 @@ describe('formatToolsList', () => {
         },
       ];
       const result = formatToolsList(tools, 'table');
-      expect(result).toContain('This is a very long description');
+      // Description is 127 chars, truncated to first 100 chars + "..."
+      const expectedTruncated = tools[0].description.substring(0, 100) + '...';
+      expect(result).toContain(expectedTruncated);
+      expect(result).not.toContain('wrap in a terminal window');
     });
 
     it('should handle empty descriptions gracefully', () => {
