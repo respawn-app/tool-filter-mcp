@@ -12,8 +12,15 @@
       "type": "stdio"
     },
     "deepwiki": {
-      "type": "sse",
-      "url": "https://mcp.deepwiki.com/sse"
+      "command": "node",
+      "args": [
+        "dist/index.js",
+        "--upstream",
+        "https://mcp.deepwiki.com/mcp",
+        "--deny",
+        "list_wiki_contents"
+      ],
+      "type": "stdio"
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@respawn-app/tool-filter-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP proxy server that filters tools from upstream MCP servers via regex-based deny list",
   "type": "module",
   "main": "dist/index.js",
@@ -38,6 +38,7 @@
     "safe-regex2": "^5.0.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
     "@types/node": "^24.6.1",
     "@typescript-eslint/eslint-plugin": "^8.20.0",
     "@typescript-eslint/parser": "^8.20.0",
