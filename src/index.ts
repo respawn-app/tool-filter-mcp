@@ -18,10 +18,14 @@ import type { EventSourceInit } from 'eventsource';
 import { formatStartupError } from './utils/error-handler.js';
 import { parseHeaders } from './utils/header-parser.js';
 
+type ToolListFormat = 'table' | 'json' | 'names';
+
 interface CLIArgs {
   upstream: string;
   deny?: string;
   header?: string[];
+  listTools?: boolean;
+  format?: ToolListFormat;
 }
 
 function parseCLIArgs(): CLIArgs {
@@ -40,18 +44,28 @@ function parseCLIArgs(): CLIArgs {
         short: 'h',
         multiple: true,
       },
+      'list-tools': {
+        type: 'boolean',
+        short: 'l',
+      },
+      format: {
+        type: 'string',
+        short: 'f',
+      },
     },
   });
 
   if (!values.upstream) {
     console.error('Error: --upstream argument is required');
-    console.error('Usage: tool-filter-mcp --upstream <url> [--deny <patterns>] [--header <name:value>]');
+    console.error('Usage: tool-filter-mcp --upstream <url> [--deny <patterns>] [--header <name:value>] [--list-tools] [--format <table|json|names>]');
     process.exit(1);
   }
 
   const upstream = values.upstream;
   const deny = values.deny;
   const header = values.header;
+  const listTools = values['list-tools'];
+  const format = values.format as ToolListFormat | undefined;
 
   try {
     new URL(upstream);
@@ -60,10 +74,18 @@ function parseCLIArgs(): CLIArgs {
     process.exit(1);
   }
 
+  // Validate format if provided
+  if (format && !['table', 'json', 'names'].includes(format)) {
+    console.error(`Error: Invalid format "${format}". Must be one of: table, json, names`);
+    process.exit(1);
+  }
+
   return {
     upstream,
     deny,
     header,
+    listTools,
+    format: format || 'table',
   };
 }
 
@@ -85,6 +107,40 @@ function createProxyConfig(args: CLIArgs): ProxyConfig {
       toolList: 10000,
     },
   };
+}
+
+interface Tool {
+  name: string;
+  description?: string;
+  inputSchema: object;
+}
+
+export function formatToolsList(tools: Tool[], format: ToolListFormat): string {
+  if (tools.length === 0) {
+    return format === 'json' ? '[]' : '';
+  }
+
+  switch (format) {
+    case 'json':
+      return JSON.stringify(tools, null, 2);
+
+    case 'names':
+      return tools.map((t) => t.name).join(',');
+
+    case 'table':
+    default:
+      const header = `Available tools (${tools.length} total):\n`;
+      const maxNameLength = Math.max(...tools.map((t) => t.name.length), 20);
+      const separator = '\n';
+
+      const rows = tools.map((tool) => {
+        const name = tool.name.padEnd(maxNameLength + 2);
+        const desc = tool.description || '(no description)';
+        return `${name}${desc}`;
+      });
+
+      return header + separator + rows.join('\n');
+  }
 }
 
 function normalizeAllowHeader(header: string | null): string | null {
@@ -357,9 +413,54 @@ export async function createUpstreamClient(
   };
 }
 
+async function listToolsMode(args: CLIArgs): Promise<void> {
+  try {
+    const config = createProxyConfig(args);
+
+    console.error(`Connecting to upstream MCP at ${config.upstreamUrl}...`);
+
+    const upstreamClient = await createUpstreamClient(config.upstreamUrl, config.headers);
+    await upstreamClient.connect();
+
+    console.error('Fetching tools from upstream...');
+
+    const result = await upstreamClient.listTools();
+    let tools = result.tools;
+
+    // Apply filtering if deny patterns are provided
+    if (config.denyPatterns.length > 0) {
+      const patterns = config.denyPatterns.map((pattern) => new RegExp(pattern));
+      tools = tools.filter((tool) => {
+        return !patterns.some((pattern) => pattern.test(tool.name));
+      });
+      console.error(`Applied ${config.denyPatterns.length} filter pattern(s)`);
+    }
+
+    console.error(`Found ${tools.length} tool(s)\n`);
+
+    // Output to stdout (not stderr) so it can be piped/redirected
+    const formatted = formatToolsList(tools, args.format || 'table');
+    // eslint-disable-next-line no-console
+    console.log(formatted);
+
+    upstreamClient.disconnect();
+  } catch (error) {
+    const errorMessage = formatStartupError(error);
+    console.error(`Error: ${errorMessage}`);
+    process.exit(1);
+  }
+}
+
 async function main(): Promise<void> {
   try {
     const args = parseCLIArgs();
+
+    // Handle list-tools mode
+    if (args.listTools) {
+      await listToolsMode(args);
+      return;
+    }
+
     const config = createProxyConfig(args);
 
     console.error(`Connecting to upstream MCP at ${config.upstreamUrl}...`);
