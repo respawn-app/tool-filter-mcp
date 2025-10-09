@@ -12,12 +12,13 @@ tests/
 ```
 
 ## Commands
-npm test [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLOGIES] npm run lint
+npm test [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES] npm run lint
 
 ## Code Style
 TypeScript 5.x with strict mode enabled: Follow standard conventions
 
 ## Recent Changes
+- 002-oauth-authentication-proxy: Added TypeScript 5.x with strict mode enabled (existing)
 - 001-mcp-tool-filter-proxy: Added TypeScript 5.x with strict mode enabled + @modelcontextprotocol/sdk (official Anthropic SDK), Node.js 20+ LTS
 
 <!-- MANUAL ADDITIONS START -->

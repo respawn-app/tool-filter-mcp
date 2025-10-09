@@ -1,6 +1,7 @@
 export interface ProxyConfig {
   upstreamUrl: string;
   denyPatterns: string[];
+  headers?: Record<string, string>;
   timeouts: {
     connection: number;
     toolList: number;
