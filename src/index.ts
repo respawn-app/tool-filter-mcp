@@ -6,6 +6,7 @@ import { ProxyOrchestrator } from './proxy.js';
 import { createMCPServer } from './server.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { formatStartupError } from './utils/error-handler.js';
 import { parseHeaders } from './utils/header-parser.js';
 
@@ -90,28 +91,6 @@ async function createUpstreamClient(
   upstreamUrl: string,
   headers?: Record<string, string>
 ): Promise<WrappedClient> {
-  const transportOptions: {
-    eventSourceInit?: { fetch: typeof fetch };
-    requestInit?: RequestInit;
-  } = {};
-
-  if (headers && Object.keys(headers).length > 0) {
-    transportOptions.eventSourceInit = {
-      fetch: (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-        const mergedHeaders = new Headers(init?.headers || {});
-        for (const [name, value] of Object.entries(headers)) {
-          mergedHeaders.set(name, value);
-        }
-        return fetch(input, { ...init, headers: mergedHeaders });
-      },
-    };
-
-    transportOptions.requestInit = {
-      headers,
-    };
-  }
-
-  const transport = new SSEClientTransport(new URL(upstreamUrl), transportOptions);
   const client = new Client(
     {
       name: 'tool-filter-mcp',
@@ -123,27 +102,89 @@ async function createUpstreamClient(
   );
 
   let connected = false;
+  const baseUrl = new URL(upstreamUrl);
 
-  return {
-    async connect(): Promise<void> {
-      await client.connect(transport);
-      connected = true;
-    },
-    async listTools(): Promise<{ tools: { name: string; description?: string; inputSchema: object }[] }> {
-      const result = await client.listTools();
-      return result as { tools: { name: string; description?: string; inputSchema: object }[] };
-    },
-    async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
-      return await client.callTool({ name, arguments: args });
-    },
-    disconnect(): void {
-      void client.close();
-      connected = false;
-    },
-    isConnected(): boolean {
-      return connected;
-    },
-  };
+  const customFetch = headers && Object.keys(headers).length > 0
+    ? (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+        const mergedHeaders = new Headers(init?.headers || {});
+        for (const [name, value] of Object.entries(headers)) {
+          mergedHeaders.set(name, value);
+        }
+        return fetch(input, { ...init, headers: mergedHeaders });
+      }
+    : undefined;
+
+  const requestInit = headers && Object.keys(headers).length > 0
+    ? { headers }
+    : undefined;
+
+  try {
+    const streamableTransport = new StreamableHTTPClientTransport(baseUrl, {
+      requestInit,
+      fetch: customFetch,
+    });
+
+    return {
+      async connect(): Promise<void> {
+        await client.connect(streamableTransport);
+        connected = true;
+        console.error('Connected via Streamable HTTP transport');
+      },
+      async listTools(): Promise<{ tools: { name: string; description?: string; inputSchema: object }[] }> {
+        const result = await client.listTools();
+        return result as { tools: { name: string; description?: string; inputSchema: object }[] };
+      },
+      async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+        return await client.callTool({ name, arguments: args });
+      },
+      disconnect(): void {
+        void client.close();
+        connected = false;
+      },
+      isConnected(): boolean {
+        return connected;
+      },
+    };
+  } catch {
+    console.error('Streamable HTTP connection failed, falling back to SSE transport...');
+
+    const sseClient = new Client(
+      {
+        name: 'tool-filter-mcp',
+        version: '0.1.0',
+      },
+      {
+        capabilities: {},
+      }
+    );
+
+    const sseTransport = new SSEClientTransport(baseUrl, {
+      eventSourceInit: customFetch ? { fetch: customFetch } : undefined,
+      requestInit,
+    });
+
+    return {
+      async connect(): Promise<void> {
+        await sseClient.connect(sseTransport);
+        connected = true;
+        console.error('Connected via SSE transport (deprecated)');
+      },
+      async listTools(): Promise<{ tools: { name: string; description?: string; inputSchema: object }[] }> {
+        const result = await sseClient.listTools();
+        return result as { tools: { name: string; description?: string; inputSchema: object }[] };
+      },
+      async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+        return await sseClient.callTool({ name, arguments: args });
+      },
+      disconnect(): void {
+        void sseClient.close();
+        connected = false;
+      },
+      isConnected(): boolean {
+        return connected;
+      },
+    };
+  }
 }
 
 async function main(): Promise<void> {
