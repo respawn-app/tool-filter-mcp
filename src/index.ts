@@ -7,10 +7,12 @@ import { createMCPServer } from './server.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { formatStartupError } from './utils/error-handler.js';
+import { parseHeaders } from './utils/header-parser.js';
 
 interface CLIArgs {
   upstream: string;
   deny?: string;
+  header?: string[];
 }
 
 function parseCLIArgs(): CLIArgs {
@@ -24,17 +26,23 @@ function parseCLIArgs(): CLIArgs {
         type: 'string',
         short: 'd',
       },
+      header: {
+        type: 'string',
+        short: 'h',
+        multiple: true,
+      },
     },
   });
 
   if (!values.upstream) {
     console.error('Error: --upstream argument is required');
-    console.error('Usage: tool-filter-mcp --upstream <url> [--deny <patterns>]');
+    console.error('Usage: tool-filter-mcp --upstream <url> [--deny <patterns>] [--header <name:value>]');
     process.exit(1);
   }
 
   const upstream = values.upstream;
   const deny = values.deny;
+  const header = values.header;
 
   try {
     new URL(upstream);
@@ -46,6 +54,7 @@ function parseCLIArgs(): CLIArgs {
   return {
     upstream,
     deny,
+    header,
   };
 }
 
@@ -54,9 +63,14 @@ function createProxyConfig(args: CLIArgs): ProxyConfig {
     ? args.deny.split(',').map((p) => p.trim()).filter((p) => p.length > 0)
     : [];
 
+  const headers = args.header && args.header.length > 0
+    ? parseHeaders(args.header)
+    : undefined;
+
   return {
     upstreamUrl: args.upstream,
     denyPatterns,
+    headers,
     timeouts: {
       connection: 30000,
       toolList: 10000,
@@ -72,8 +86,32 @@ interface WrappedClient {
   isConnected(): boolean;
 }
 
-async function createUpstreamClient(upstreamUrl: string): Promise<WrappedClient> {
-  const transport = new SSEClientTransport(new URL(upstreamUrl));
+async function createUpstreamClient(
+  upstreamUrl: string,
+  headers?: Record<string, string>
+): Promise<WrappedClient> {
+  const transportOptions: {
+    eventSourceInit?: { fetch: typeof fetch };
+    requestInit?: RequestInit;
+  } = {};
+
+  if (headers && Object.keys(headers).length > 0) {
+    transportOptions.eventSourceInit = {
+      fetch: (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+        const mergedHeaders = new Headers(init?.headers || {});
+        for (const [name, value] of Object.entries(headers)) {
+          mergedHeaders.set(name, value);
+        }
+        return fetch(input, { ...init, headers: mergedHeaders });
+      },
+    };
+
+    transportOptions.requestInit = {
+      headers,
+    };
+  }
+
+  const transport = new SSEClientTransport(new URL(upstreamUrl), transportOptions);
   const client = new Client(
     {
       name: 'tool-filter-mcp',
@@ -87,22 +125,22 @@ async function createUpstreamClient(upstreamUrl: string): Promise<WrappedClient>
   let connected = false;
 
   return {
-    async connect() {
+    async connect(): Promise<void> {
       await client.connect(transport);
       connected = true;
     },
-    async listTools() {
+    async listTools(): Promise<{ tools: { name: string; description?: string; inputSchema: object }[] }> {
       const result = await client.listTools();
       return result as { tools: { name: string; description?: string; inputSchema: object }[] };
     },
-    async callTool(name: string, args: Record<string, unknown>) {
+    async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
       return await client.callTool({ name, arguments: args });
     },
-    disconnect() {
+    disconnect(): void {
       void client.close();
       connected = false;
     },
-    isConnected() {
+    isConnected(): boolean {
       return connected;
     },
   };
@@ -115,7 +153,7 @@ async function main(): Promise<void> {
 
     console.error(`Connecting to upstream MCP at ${config.upstreamUrl}...`);
 
-    const upstreamClient = await createUpstreamClient(config.upstreamUrl);
+    const upstreamClient = await createUpstreamClient(config.upstreamUrl, config.headers);
 
     const proxy = new ProxyOrchestrator(config, upstreamClient);
     await proxy.startup();
@@ -127,6 +165,10 @@ async function main(): Promise<void> {
 
     if (config.denyPatterns.length > 0) {
       console.error(`Deny patterns: ${config.denyPatterns.join(', ')}`);
+    }
+
+    if (config.headers && Object.keys(config.headers).length > 0) {
+      console.error(`Custom headers: ${Object.keys(config.headers).join(', ')}`);
     }
 
     const server = await createMCPServer(proxy);

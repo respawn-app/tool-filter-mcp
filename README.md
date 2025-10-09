@@ -22,6 +22,7 @@ This project is fully vibe-coded with claude. Contributions welcome!
 ## Features
 
 - **Tool Filtering**: Block specific tools using regex patterns
+- **Header Pass-Through**: Add custom HTTP headers for authentication
 - **Zero Latency**: Cached tool list, minimal overhead
 - **Fail-Fast**: Immediate error on connection issues or invalid patterns
 - **Transparent Proxying**: Forwards allowed tool calls to upstream without modification
@@ -54,6 +55,25 @@ npx @respawn-app/tool-filter-mcp \
   --deny "get_file_text,create_new_file,replace_text"
 ```
 
+### With Authentication Headers
+
+Add custom headers for authentication:
+
+```bash
+npx @respawn-app/tool-filter-mcp \
+  --upstream http://localhost:3000/sse \
+  --header "Authorization: Bearer your-token-here" \
+  --header "X-API-Key: your-api-key"
+```
+
+Headers support environment variable expansion (if not yet expanded by your app):
+
+```bash
+npx @respawn-app/tool-filter-mcp \
+  --upstream http://localhost:3000/sse \
+  --header "Authorization: Bearer $AUTH_TOKEN"
+```
+
 ### With Claude Code
 
 Add to your `.mcp.json`:
@@ -76,10 +96,36 @@ Add to your `.mcp.json`:
 }
 ```
 
+With authentication headers (supports environment variable expansion):
+
+```json
+{
+  "mcpServers": {
+    "filtered-server": {
+      "command": "npx",
+      "args": [
+        "@respawn-app/tool-filter-mcp",
+        "--upstream",
+        "http://localhost:3000/sse",
+        "--header",
+        "Authorization: Bearer ${API_TOKEN}",
+        "--header",
+        "X-Custom-Header: $CUSTOM_VALUE"
+      ],
+      "type": "stdio"
+    }
+  }
+}
+```
+
 ## CLI Options
 
 - `--upstream <url>` (required): Upstream MCP server URL (SSE transport)
 - `--deny <patterns>`: Comma-separated regex patterns for tools to filter
+- `--header <name:value>`: Custom HTTP header to pass to upstream server (can be repeated for multiple headers)
+  - Format: `--header "Header-Name: value"`
+  - Supports environment variable expansion: `$VAR` or `${VAR}`
+  - Example: `--header "Authorization: Bearer $TOKEN"`
 
 ## Requirements
 
