@@ -1,11 +1,20 @@
 #!/usr/bin/env node
 
 import { parseArgs } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import { ProxyConfig } from './types.js';
 import { ProxyOrchestrator } from './proxy.js';
 import { createMCPServer } from './server.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import {
+  SSEClientTransport,
+  type SSEClientTransportOptions,
+} from '@modelcontextprotocol/sdk/client/sse.js';
+import {
+  StreamableHTTPClientTransport,
+  type StreamableHTTPClientTransportOptions,
+} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import type { EventSourceInit } from 'eventsource';
 import { formatStartupError } from './utils/error-handler.js';
 import { parseHeaders } from './utils/header-parser.js';
 
@@ -78,7 +87,81 @@ function createProxyConfig(args: CLIArgs): ProxyConfig {
   };
 }
 
-interface WrappedClient {
+function normalizeAllowHeader(header: string | null): string | null {
+  if (!header) {
+    return null;
+  }
+
+  const methods = header
+    .split(',')
+    .map((method) => method.trim().toUpperCase())
+    .filter((method) => method.length > 0);
+
+  if (methods.length === 0) {
+    return null;
+  }
+
+  return [...new Set(methods)].join(', ');
+}
+
+async function probeAllowedMethods(
+  upstreamUrl: string,
+  headers: Record<string, string>,
+  fetchImpl: typeof fetch
+): Promise<string | null> {
+  const methodsToTry: Array<RequestInit['method']> = ['OPTIONS', 'HEAD'];
+  const headerEntries = Object.entries(headers ?? {});
+
+  for (const method of methodsToTry) {
+    try {
+      const requestInit: RequestInit = { method };
+
+      if (headerEntries.length > 0) {
+        const requestHeaders = new Headers();
+        for (const [key, value] of headerEntries) {
+          requestHeaders.set(key, value);
+        }
+        requestInit.headers = requestHeaders;
+      }
+
+      const response = await fetchImpl(upstreamUrl, requestInit);
+      const allowHeader = normalizeAllowHeader(
+        response.headers && typeof response.headers.get === 'function'
+          ? response.headers.get('allow')
+          : null
+      );
+
+      if (allowHeader) {
+        return allowHeader;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+function isMethodNotAllowedError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const code = (error as { code?: unknown }).code;
+
+  if (typeof code === 'number') {
+    return code === 405;
+  }
+
+  if (typeof code === 'string') {
+    const parsed = Number(code);
+    return Number.isInteger(parsed) && parsed === 405;
+  }
+
+  return false;
+}
+
+export interface WrappedClient {
   connect(): Promise<void>;
   listTools(): Promise<{ tools: { name: string; description?: string; inputSchema: object }[] }>;
   callTool(name: string, args: Record<string, unknown>): Promise<unknown>;
@@ -86,48 +169,171 @@ interface WrappedClient {
   isConnected(): boolean;
 }
 
-async function createUpstreamClient(
+export async function createUpstreamClient(
   upstreamUrl: string,
   headers?: Record<string, string>
 ): Promise<WrappedClient> {
-  const transportOptions: {
-    eventSourceInit?: { fetch: typeof fetch };
-    requestInit?: RequestInit;
-  } = {};
+  const allowHeaderRef: { value: string | null } = { value: null };
+  const baseFetch: typeof fetch = fetch;
+  const upstreamTarget = new URL(upstreamUrl);
+  const safeHeaders = headers ?? {};
 
-  if (headers && Object.keys(headers).length > 0) {
-    transportOptions.eventSourceInit = {
-      fetch: (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-        const mergedHeaders = new Headers(init?.headers || {});
-        for (const [name, value] of Object.entries(headers)) {
-          mergedHeaders.set(name, value);
-        }
-        return fetch(input, { ...init, headers: mergedHeaders });
-      },
-    };
+  const fetchWithAllowCapture: typeof fetch = async (input, init) => {
+    const response = await baseFetch(input, init);
 
-    transportOptions.requestInit = {
-      headers,
-    };
+    if (response && typeof response === 'object' && 'status' in response && response.status === 405) {
+      const headers =
+        'headers' in response && response.headers && typeof (response.headers as Headers).get === 'function'
+          ? (response.headers as Headers)
+          : undefined;
+      const allowHeader = headers ? headers.get('allow') : null;
+      allowHeaderRef.value = normalizeAllowHeader(allowHeader);
+    }
+
+    return response;
+  };
+
+  const eventSourceInit: EventSourceInit & {
+    headers?: Record<string, string>;
+    fetch: typeof fetch;
+  } = {
+    fetch: fetchWithAllowCapture,
+  };
+
+  const requestInit: RequestInit | undefined = Object.keys(safeHeaders).length > 0
+    ? { headers: safeHeaders }
+    : undefined;
+
+  if (Object.keys(safeHeaders).length > 0) {
+    eventSourceInit.headers = safeHeaders;
   }
 
-  const transport = new SSEClientTransport(new URL(upstreamUrl), transportOptions);
-  const client = new Client(
-    {
-      name: 'tool-filter-mcp',
-      version: '0.1.0',
-    },
-    {
-      capabilities: {},
-    }
-  );
+  const transportOptions: SSEClientTransportOptions = {
+    eventSourceInit,
+    fetch: fetchWithAllowCapture,
+    ...(requestInit ? { requestInit } : {}),
+  };
+  const streamableOptions: StreamableHTTPClientTransportOptions = {
+    fetch: fetchWithAllowCapture,
+    ...(requestInit ? { requestInit } : {}),
+  };
 
+  const determineTransportOrder = (url: URL): Array<'streamable' | 'sse'> => {
+    const rawPath = url.pathname.toLowerCase();
+    const normalizedPath = rawPath === '/' ? '/' : rawPath.replace(/\/+$/, '');
+    if (normalizedPath.endsWith('/sse')) {
+      return ['sse', 'streamable'];
+    }
+    if (normalizedPath.endsWith('/mcp')) {
+      return ['streamable', 'sse'];
+    }
+    return ['streamable', 'sse'];
+  };
+
+  const transportOrder = determineTransportOrder(upstreamTarget);
+  const createClient = (): Client =>
+    new Client(
+      {
+        name: 'tool-filter-mcp',
+        version: '0.2.0',
+      },
+      {
+        capabilities: {},
+      }
+    );
+
+  let client: Client = createClient();
+  let activeTransport: SSEClientTransport | StreamableHTTPClientTransport | null = null;
   let connected = false;
+
+  const closeTransport = async (
+    transport: SSEClientTransport | StreamableHTTPClientTransport
+  ): Promise<void> => {
+    try {
+      await transport.close();
+    } catch {}
+  };
+
+  const shouldFallbackToSse = (error: unknown): boolean => {
+    if (isMethodNotAllowedError(error)) {
+      return true;
+    }
+
+    if (error instanceof Error && typeof error.message === 'string') {
+      return /HTTP\s+40[45]/.test(error.message);
+    }
+
+    return false;
+  };
 
   return {
     async connect(): Promise<void> {
-      await client.connect(transport);
-      connected = true;
+      activeTransport = null;
+      connected = false;
+
+      for (let index = 0; index < transportOrder.length; index += 1) {
+        const attempt = transportOrder[index];
+
+        allowHeaderRef.value = null;
+        client = createClient();
+
+        const transport =
+          attempt === 'streamable'
+            ? new StreamableHTTPClientTransport(new URL(upstreamUrl), streamableOptions)
+            : new SSEClientTransport(new URL(upstreamUrl), transportOptions);
+
+        try {
+          await client.connect(transport);
+          activeTransport = transport;
+          connected = true;
+          return;
+        } catch (error) {
+          await closeTransport(transport);
+          activeTransport = null;
+          connected = false;
+
+          if (attempt === 'streamable') {
+            const hasSseRemaining = transportOrder.slice(index + 1).includes('sse');
+
+            if (hasSseRemaining && shouldFallbackToSse(error)) {
+              allowHeaderRef.value = null;
+              continue;
+            }
+
+            if (isMethodNotAllowedError(error)) {
+              const allowedMethods =
+                allowHeaderRef.value ??
+                (await probeAllowedMethods(upstreamUrl, safeHeaders, fetchWithAllowCapture));
+              const message = allowedMethods
+                ? `Upstream responded with HTTP 405 Method Not Allowed. Supported methods: ${allowedMethods}.`
+                : 'Upstream responded with HTTP 405 Method Not Allowed and did not provide an Allow header.';
+
+              throw new Error(message, { cause: error });
+            }
+
+            throw error;
+          }
+
+          const hasStreamableRemaining = transportOrder.slice(index + 1).includes('streamable');
+
+          if (hasStreamableRemaining) {
+            continue;
+          }
+
+          if (isMethodNotAllowedError(error)) {
+            const allowedMethods =
+              allowHeaderRef.value ??
+              (await probeAllowedMethods(upstreamUrl, safeHeaders, fetchWithAllowCapture));
+            const message = allowedMethods
+              ? `Upstream responded with HTTP 405 Method Not Allowed. Supported methods: ${allowedMethods}.`
+              : 'Upstream responded with HTTP 405 Method Not Allowed and did not provide an Allow header.';
+
+            throw new Error(message, { cause: error });
+          }
+
+          throw error;
+        }
+      }
     },
     async listTools(): Promise<{ tools: { name: string; description?: string; inputSchema: object }[] }> {
       const result = await client.listTools();
@@ -137,8 +343,13 @@ async function createUpstreamClient(
       return await client.callTool({ name, arguments: args });
     },
     disconnect(): void {
+      if (activeTransport instanceof StreamableHTTPClientTransport) {
+        void activeTransport.terminateSession().catch(() => undefined);
+      }
+
       void client.close();
       connected = false;
+      activeTransport = null;
     },
     isConnected(): boolean {
       return connected;
@@ -196,4 +407,6 @@ async function main(): Promise<void> {
   }
 }
 
-void main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  void main();
+}
