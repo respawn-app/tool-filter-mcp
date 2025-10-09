@@ -22,6 +22,7 @@ This project is fully vibe-coded with claude. Contributions welcome!
 ## Features
 
 - **Tool Filtering**: Block specific tools using regex patterns
+- **Tool Discovery**: List available tools with multiple output formats (table, JSON, names)
 - **Header Pass-Through**: Add custom HTTP headers for authentication
 - **Zero Latency**: Cached tool list, minimal overhead
 - **Fail-Fast**: Immediate error on connection issues or invalid patterns
@@ -72,6 +73,33 @@ Headers support environment variable expansion (if not yet expanded by your app)
 npx @respawn-app/tool-filter-mcp \
   --upstream http://localhost:3000/sse \
   --header "Authorization: Bearer $AUTH_TOKEN"
+```
+
+### List Available Tools
+
+Discover what tools are available before setting up filters:
+
+```bash
+# Default table format
+npx @respawn-app/tool-filter-mcp \
+  --upstream http://localhost:3000/sse \
+  --list-tools
+
+# Get comma-separated names for copy-paste
+npx @respawn-app/tool-filter-mcp \
+  --upstream http://localhost:3000/sse \
+  --list-tools --format=names
+
+# Get full JSON with schemas
+npx @respawn-app/tool-filter-mcp \
+  --upstream http://localhost:3000/sse \
+  --list-tools --format=json
+
+# Preview filtered results
+npx @respawn-app/tool-filter-mcp \
+  --upstream http://localhost:3000/sse \
+  --deny ".*_file$" \
+  --list-tools --format=names
 ```
 
 ### With Claude Code
@@ -126,6 +154,11 @@ With authentication headers (supports environment variable expansion):
   - Format: `--header "Header-Name: value"`
   - Supports environment variable expansion: `$VAR` or `${VAR}`
   - Example: `--header "Authorization: Bearer $TOKEN"`
+- `--list-tools`: List available tools from upstream and exit (does not start proxy server)
+- `--format <type>`: Output format for `--list-tools` (default: `table`)
+  - `table`: Human-readable table with descriptions (truncated to 100 chars)
+  - `json`: Full JSON output with complete schemas
+  - `names`: Comma-separated tool names for easy copy-paste
 
 ## Requirements
 
