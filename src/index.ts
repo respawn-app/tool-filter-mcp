@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import { parseArgs } from 'node:util';
-import { fileURLToPath } from 'node:url';
 import { ProxyConfig } from './types.js';
 import { ProxyOrchestrator } from './proxy.js';
 import { createMCPServer } from './server.js';
@@ -407,6 +406,12 @@ async function main(): Promise<void> {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+// Run main() unless we're being imported for testing
+// Check for common test environments instead of exact path matching
+// which breaks with npx due to symlink resolution
+const isTest = process.env.NODE_ENV === 'test' ||
+              process.argv.some(arg => arg.includes('vitest') || arg.includes('jest'));
+
+if (!isTest) {
   void main();
 }
