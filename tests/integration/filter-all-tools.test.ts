@@ -1,14 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { ProxyOrchestrator } from '../../src/proxy.js';
 import { MCPServer } from '../../src/server.js';
-import { ProxyConfig } from '../../src/types.js';
+import { HttpProxyConfig } from '../../src/types.js';
 import { createMockServer } from '../fixtures/mock-mcp-server.js';
 import { sampleTools, allTools } from '../fixtures/sample-tools.js';
 
 describe('Filter All Tools', () => {
   it('should return empty tool list when all tools filtered', async () => {
     const mockServer = createMockServer(sampleTools);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['.*'],
       timeouts: {
@@ -26,7 +27,8 @@ describe('Filter All Tools', () => {
 
   it('should reject all tool calls when everything filtered', async () => {
     const mockServer = createMockServer(sampleTools);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['.*'],
       timeouts: {
@@ -46,7 +48,8 @@ describe('Filter All Tools', () => {
 
   it('should return empty list from server when all tools filtered', async () => {
     const mockServer = createMockServer(sampleTools);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['.*'],
       timeouts: {
@@ -66,7 +69,8 @@ describe('Filter All Tools', () => {
 
   it('should filter all tools with specific patterns', async () => {
     const mockServer = createMockServer(allTools);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['.*_file$', '.*_dir$', '.*_env$', '.*_database$'],
       timeouts: {
@@ -84,7 +88,8 @@ describe('Filter All Tools', () => {
 
   it('should remain ready even when all tools filtered', async () => {
     const mockServer = createMockServer(sampleTools);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['.*'],
       timeouts: {
@@ -102,7 +107,8 @@ describe('Filter All Tools', () => {
 
   it('should successfully start even with empty tool list', async () => {
     const mockServer = createMockServer([]);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: [],
       timeouts: {

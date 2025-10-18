@@ -13,6 +13,7 @@ import {
   StreamableHTTPClientTransport,
   type StreamableHTTPClientTransportOptions,
 } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import type { EventSourceInit } from 'eventsource';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { formatStartupError } from './utils/error-handler.js';
@@ -21,19 +22,25 @@ import { parseHeaders } from './utils/header-parser.js';
 type ToolListFormat = 'table' | 'json' | 'names';
 
 interface CLIArgs {
-  upstream: string;
+  upstream?: string;
+  upstreamStdio?: boolean;
   deny?: string;
   header?: string[];
+  env?: string[];
+  positionals: string[];
   listTools?: boolean;
   format?: ToolListFormat;
 }
 
 export function parseCLIArgs(): CLIArgs {
-  const { values } = parseArgs({
+  const { values, positionals } = parseArgs({
     options: {
       upstream: {
         type: 'string',
         short: 'u',
+      },
+      'upstream-stdio': {
+        type: 'boolean',
       },
       deny: {
         type: 'string',
@@ -42,6 +49,11 @@ export function parseCLIArgs(): CLIArgs {
       header: {
         type: 'string',
         short: 'h',
+        multiple: true,
+      },
+      env: {
+        type: 'string',
+        short: 'e',
         multiple: true,
       },
       'list-tools': {
@@ -53,25 +65,47 @@ export function parseCLIArgs(): CLIArgs {
         short: 'f',
       },
     },
+    allowPositionals: true,
   });
 
   if (!values.upstream) {
     console.error('Error: --upstream argument is required');
-    console.error('Usage: tool-filter-mcp --upstream <url> [--deny <patterns>] [--header <name:value>] [--list-tools] [--format <table|json|names>]');
+    console.error('Usage: tool-filter-mcp --upstream <url> [--deny <patterns>] [--header <name:value>]');
     process.exit(1);
   }
 
   const upstream = values.upstream;
+  const upstreamStdio = values['upstream-stdio'];
   const deny = values.deny;
   const header = values.header;
+  const env = values.env;
   const listTools = values['list-tools'];
   const format = values.format as ToolListFormat | undefined;
 
-  try {
-    new URL(upstream);
-  } catch {
-    console.error(`Error: Invalid upstream URL: ${upstream}`);
+  // Validate mutual exclusion
+  if (!upstream && !upstreamStdio) {
+    console.error('Error: Either --upstream or --upstream-stdio is required');
+    console.error('Usage (HTTP): tool-filter-mcp --upstream <url> [--deny <patterns>] [--header <name:value>]');
+    console.error('Usage (stdio): tool-filter-mcp --upstream-stdio [--deny <patterns>] [--env <KEY=value>] -- <command> [args...]');
     process.exit(1);
+  }
+
+  if (upstream && upstreamStdio) {
+    console.error('Error: --upstream and --upstream-stdio are mutually exclusive');
+    console.error(
+      'Use --upstream for HTTP/SSE servers or --upstream-stdio for stdio servers, but not both'
+    );
+    process.exit(1);
+  }
+
+  // Validate URL if using HTTP upstream
+  if (upstream) {
+    try {
+      new URL(upstream);
+    } catch {
+      console.error(`Error: Invalid upstream URL: ${upstream}`);
+      process.exit(1);
+    }
   }
 
   // Validate format if provided
@@ -80,13 +114,63 @@ export function parseCLIArgs(): CLIArgs {
     process.exit(1);
   }
 
+  // Warn if positionals are provided with HTTP upstream (ignored)
+  if (positionals.length > 0) {
+    console.error('Warning: Positional arguments are only applicable with --upstream-stdio and will be ignored');
+  }
+
+  // Validate stdio mode has command
+  if (upstreamStdio && positionals.length === 0) {
+    console.error('Error: --upstream-stdio requires a command and arguments after --');
+    console.error('Usage: tool-filter-mcp --upstream-stdio [--deny <patterns>] [--env <KEY=value>] -- <command> [args...]');
+    console.error('Example: tool-filter-mcp --upstream-stdio --env API_KEY=secret -- uvx --from git+https://... zen-mcp-server');
+    process.exit(1);
+  }
+
+  // Warn if --header is used with stdio upstream (ignored)
+  if (upstreamStdio && header && header.length > 0) {
+    console.error('Warning: --header is only applicable with --upstream and will be ignored');
+  }
+
+  // Warn if --env is used with HTTP upstream (ignored)
+  if (upstream && env && env.length > 0) {
+    console.error('Warning: --env is only applicable with --upstream-stdio and will be ignored');
+  }
+
   return {
     upstream,
+    upstreamStdio,
     deny,
     header,
+    env,
     listTools,
     format: format || 'table',
+    positionals,
   };
+}
+
+export function parseEnvVars(envArray: string[]): Record<string, string> {
+  const envVars: Record<string, string> = {};
+
+  for (const envStr of envArray) {
+    const separatorIndex = envStr.indexOf('=');
+    if (separatorIndex === -1) {
+      console.error(`Warning: Invalid environment variable format: "${envStr}". Expected KEY=value format.`);
+      continue;
+    }
+
+    const key = envStr.slice(0, separatorIndex).trim();
+    const value = envStr.slice(separatorIndex + 1);
+
+    if (key.length === 0) {
+      console.error(`Warning: Invalid environment variable format: "${envStr}". Key cannot be empty.`);
+      continue;
+    }
+
+    envVars[key] = value;
+  }
+
+  return envVars;
 }
 
 export function createProxyConfig(args: CLIArgs): ProxyConfig {
@@ -94,19 +178,45 @@ export function createProxyConfig(args: CLIArgs): ProxyConfig {
     ? args.deny.split(',').map((p) => p.trim()).filter((p) => p.length > 0)
     : [];
 
-  const headers = args.header && args.header.length > 0
-    ? parseHeaders(args.header)
-    : undefined;
-
-  return {
-    upstreamUrl: args.upstream,
-    denyPatterns,
-    headers,
-    timeouts: {
-      connection: 30000,
-      toolList: 10000,
-    },
+  const timeouts = {
+    connection: 30000,
+    toolList: 10000,
   };
+
+  // HTTP mode
+  if (args.upstream) {
+    const headers = args.header && args.header.length > 0
+      ? parseHeaders(args.header)
+      : undefined;
+
+    return {
+      mode: 'http',
+      upstreamUrl: args.upstream,
+      denyPatterns,
+      headers,
+      timeouts,
+    };
+  }
+
+  // Stdio mode
+  if (args.upstreamStdio) {
+    const [upstreamCommand, ...upstreamArgs] = args.positionals;
+    const env = args.env && args.env.length > 0
+      ? parseEnvVars(args.env)
+      : undefined;
+
+    return {
+      mode: 'stdio',
+      upstreamCommand,
+      upstreamArgs,
+      denyPatterns,
+      env,
+      timeouts,
+    };
+  }
+
+  // This should never happen due to validation in parseCLIArgs
+  throw new Error('Invalid configuration: no upstream specified');
 }
 
 
@@ -418,14 +528,73 @@ export async function createUpstreamClient(
   };
 }
 
+export async function createStdioUpstreamClient(
+  command: string,
+  args: string[],
+  env?: Record<string, string>
+): Promise<WrappedClient> {
+  const client = new Client(
+    {
+      name: 'tool-filter-mcp',
+      version: '0.3.1',
+    },
+    {
+      capabilities: {},
+    }
+  );
+
+  let transport: StdioClientTransport | null = null;
+  let connected = false;
+
+  return {
+    async connect(): Promise<void> {
+      transport = new StdioClientTransport({
+        command,
+        args,
+        env,
+      });
+
+      await client.connect(transport);
+      connected = true;
+    },
+
+    async listTools(): Promise<{ tools: Tool[] }> {
+      const result = await client.listTools();
+      return result as { tools: Tool[] };
+    },
+
+    async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+      return await client.callTool({ name, arguments: args });
+    },
+
+    disconnect(): void {
+      void client.close();
+      connected = false;
+      transport = null;
+    },
+
+    isConnected(): boolean {
+      return connected;
+    },
+  };
+}
+
 export async function listToolsMode(args: CLIArgs): Promise<void> {
   try {
     const config = createProxyConfig(args);
 
-    console.error(`Connecting to upstream MCP at ${config.upstreamUrl}...`);
+    // Create upstream client based on config mode
+    let upstreamClient: WrappedClient;
 
-    const upstreamClient = await createUpstreamClient(config.upstreamUrl, config.headers);
-    await upstreamClient.connect();
+    if (config.mode === 'http') {
+      console.error(`Connecting to upstream MCP at ${config.upstreamUrl}...`);
+      upstreamClient = await createUpstreamClient(config.upstreamUrl, config.headers);
+    } else {
+      const commandDisplay = `${config.upstreamCommand} ${config.upstreamArgs.join(' ')}`;
+      console.error(`Connecting to upstream MCP via stdio: ${commandDisplay}...`);
+      upstreamClient = await createStdioUpstreamClient(config.upstreamCommand, config.upstreamArgs, config.env);
+    }
+    await upstreamClient.connect()
 
     console.error('Fetching tools from upstream...');
 
@@ -466,9 +635,17 @@ async function main(): Promise<void> {
 
     const config = createProxyConfig(args);
 
-    console.error(`Connecting to upstream MCP at ${config.upstreamUrl}...`);
+    // Create upstream client based on config mode
+    let upstreamClient: WrappedClient;
 
-    const upstreamClient = await createUpstreamClient(config.upstreamUrl, config.headers);
+    if (config.mode === 'http') {
+      console.error(`Connecting to upstream MCP at ${config.upstreamUrl}...`);
+      upstreamClient = await createUpstreamClient(config.upstreamUrl, config.headers);
+    } else {
+      const commandDisplay = `${config.upstreamCommand} ${config.upstreamArgs.join(' ')}`;
+      console.error(`Connecting to upstream MCP via stdio: ${commandDisplay}...`);
+      upstreamClient = await createStdioUpstreamClient(config.upstreamCommand, config.upstreamArgs, config.env);
+    }
 
     const proxy = new ProxyOrchestrator(config, upstreamClient);
     await proxy.startup();
@@ -482,7 +659,7 @@ async function main(): Promise<void> {
       console.error(`Deny patterns: ${config.denyPatterns.join(', ')}`);
     }
 
-    if (config.headers && Object.keys(config.headers).length > 0) {
+    if (config.mode === 'http' && config.headers && Object.keys(config.headers).length > 0) {
       console.error(`Custom headers: ${Object.keys(config.headers).join(', ')}`);
     }
 
