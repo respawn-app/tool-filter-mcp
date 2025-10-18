@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { ProxyOrchestrator } from '../../src/proxy.js';
-import { ProxyConfig } from '../../src/types.js';
+import { HttpProxyConfig } from '../../src/types.js';
 import { createMockServer } from '../fixtures/mock-mcp-server.js';
 import { sampleTools } from '../fixtures/sample-tools.js';
 
 describe('Connection Loss', () => {
   it('should detect upstream connection loss', async () => {
     const mockServer = createMockServer(sampleTools);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: [],
       timeouts: {
@@ -29,7 +30,8 @@ describe('Connection Loss', () => {
 
   it('should fail tool calls after connection loss', async () => {
     const mockServer = createMockServer(sampleTools);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: [],
       timeouts: {
@@ -49,7 +51,8 @@ describe('Connection Loss', () => {
 
   it('should maintain ready state after connection loss', async () => {
     const mockServer = createMockServer(sampleTools);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: [],
       timeouts: {

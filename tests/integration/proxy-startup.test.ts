@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ProxyOrchestrator } from '../../src/proxy.js';
-import { ProxyConfig } from '../../src/types.js';
+import { HttpProxyConfig } from '../../src/types.js';
 import { createMockServer, createFailingMockServer } from '../fixtures/mock-mcp-server.js';
 import { sampleTools, allTools } from '../fixtures/sample-tools.js';
 
@@ -8,7 +8,8 @@ describe('ProxyOrchestrator', () => {
   describe('startup sequence', () => {
     it('should complete startup successfully', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
         timeouts: {
@@ -25,7 +26,8 @@ describe('ProxyOrchestrator', () => {
 
     it('should filter tools during startup', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_file$'],
         timeouts: {
@@ -44,7 +46,8 @@ describe('ProxyOrchestrator', () => {
 
     it('should fail startup on connection error', async () => {
       const mockServer = createFailingMockServer();
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:9999',
         denyPatterns: [],
         timeouts: {
@@ -60,7 +63,8 @@ describe('ProxyOrchestrator', () => {
 
     it('should fail startup on invalid regex pattern', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['^[a-z'],
         timeouts: {
@@ -75,7 +79,8 @@ describe('ProxyOrchestrator', () => {
 
     it('should fail startup on unsafe regex pattern', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['(a+)+'],
         timeouts: {
@@ -90,7 +95,8 @@ describe('ProxyOrchestrator', () => {
 
     it('should handle empty tool list after filtering', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*'],
         timeouts: {
@@ -110,7 +116,8 @@ describe('ProxyOrchestrator', () => {
   describe('getCachedTools', () => {
     it('should return filtered tool list', async () => {
       const mockServer = createMockServer(allTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_database$'],
         timeouts: {
@@ -129,7 +136,8 @@ describe('ProxyOrchestrator', () => {
 
     it('should return immutable tool list', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
         timeouts: {
@@ -150,7 +158,8 @@ describe('ProxyOrchestrator', () => {
 
     it('should throw when not ready', () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
         timeouts: {
@@ -167,7 +176,8 @@ describe('ProxyOrchestrator', () => {
   describe('isToolAllowed', () => {
     it('should return true for allowed tool', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_file$'],
         timeouts: {
@@ -185,7 +195,8 @@ describe('ProxyOrchestrator', () => {
 
     it('should return false for denied tool', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_file$'],
         timeouts: {
@@ -203,7 +214,8 @@ describe('ProxyOrchestrator', () => {
 
     it('should return false for non-existent tool', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
         timeouts: {
@@ -220,7 +232,8 @@ describe('ProxyOrchestrator', () => {
 
     it('should throw when not ready', () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
         timeouts: {
@@ -237,7 +250,8 @@ describe('ProxyOrchestrator', () => {
   describe('getUpstreamConnection', () => {
     it('should return upstream connection instance', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
         timeouts: {

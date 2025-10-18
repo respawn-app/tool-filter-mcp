@@ -10,8 +10,14 @@ export class ProxyOrchestrator {
 
   constructor(config: ProxyConfig, client: MCPClient) {
     this.config = config;
+
+    // Determine identifier string based on config mode
+    const identifier = config.mode === 'http'
+      ? config.upstreamUrl
+      : `${config.upstreamCommand} ${config.upstreamArgs.join(' ')}`;
+
     this.upstreamConnection = new UpstreamConnection(
-      config.upstreamUrl,
+      identifier,
       client,
       config.timeouts
     );

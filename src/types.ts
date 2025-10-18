@@ -1,12 +1,27 @@
-export interface ProxyConfig {
-  upstreamUrl: string;
+export type UpstreamMode = 'http' | 'stdio';
+
+export interface BaseProxyConfig {
   denyPatterns: string[];
-  headers?: Record<string, string>;
   timeouts: {
     connection: number;
     toolList: number;
   };
 }
+
+export interface HttpProxyConfig extends BaseProxyConfig {
+  mode: 'http';
+  upstreamUrl: string;
+  headers?: Record<string, string>;
+}
+
+export interface StdioProxyConfig extends BaseProxyConfig {
+  mode: 'stdio';
+  upstreamCommand: string;
+  upstreamArgs: string[];
+  env?: Record<string, string>;
+}
+
+export type ProxyConfig = HttpProxyConfig | StdioProxyConfig;
 
 export interface FilteredTool {
   name: string;
