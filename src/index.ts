@@ -14,6 +14,7 @@ import {
   type StreamableHTTPClientTransportOptions,
 } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type { EventSourceInit } from 'eventsource';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { formatStartupError } from './utils/error-handler.js';
 import { parseHeaders } from './utils/header-parser.js';
 
@@ -27,7 +28,7 @@ interface CLIArgs {
   format?: ToolListFormat;
 }
 
-function parseCLIArgs(): CLIArgs {
+export function parseCLIArgs(): CLIArgs {
   const { values } = parseArgs({
     options: {
       upstream: {
@@ -88,7 +89,7 @@ function parseCLIArgs(): CLIArgs {
   };
 }
 
-function createProxyConfig(args: CLIArgs): ProxyConfig {
+export function createProxyConfig(args: CLIArgs): ProxyConfig {
   const denyPatterns = args.deny
     ? args.deny.split(',').map((p) => p.trim()).filter((p) => p.length > 0)
     : [];
@@ -108,10 +109,13 @@ function createProxyConfig(args: CLIArgs): ProxyConfig {
   };
 }
 
-interface Tool {
-  name: string;
-  description?: string;
-  inputSchema: object;
+
+export function truncateDescription(desc: string, maxLength: number): string {
+  const firstLine = desc.split('\n')[0];
+  if (firstLine.length > maxLength) {
+    return firstLine.substring(0, maxLength) + '...';
+  }
+  return firstLine !== desc ? firstLine + '...' : firstLine;
 }
 
 export function formatToolsList(tools: Tool[], format: ToolListFormat): string {
@@ -135,18 +139,7 @@ export function formatToolsList(tools: Tool[], format: ToolListFormat): string {
 
       const rows = tools.map((tool) => {
         const name = tool.name.padEnd(maxNameLength + 2);
-        let desc = tool.description || '(no description)';
-
-        // Truncate to first line and max length
-        const firstLine = desc.split('\n')[0];
-        if (firstLine.length > maxDescLength) {
-          desc = firstLine.substring(0, maxDescLength) + '...';
-        } else if (firstLine !== desc) {
-          // Multi-line description - show first line with ellipsis
-          desc = firstLine + '...';
-        } else {
-          desc = firstLine;
-        }
+        const desc = truncateDescription(tool.description || '(no description)', maxDescLength);
 
         return `${name}${desc}`;
       });
@@ -231,7 +224,7 @@ function isMethodNotAllowedError(error: unknown): boolean {
 
 export interface WrappedClient {
   connect(): Promise<void>;
-  listTools(): Promise<{ tools: { name: string; description?: string; inputSchema: object }[] }>;
+  listTools(): Promise<{ tools: Tool[] }>;
   callTool(name: string, args: Record<string, unknown>): Promise<unknown>;
   disconnect(): void;
   isConnected(): boolean;
@@ -403,9 +396,9 @@ export async function createUpstreamClient(
         }
       }
     },
-    async listTools(): Promise<{ tools: { name: string; description?: string; inputSchema: object }[] }> {
+    async listTools(): Promise<{ tools: Tool[] }> {
       const result = await client.listTools();
-      return result as { tools: { name: string; description?: string; inputSchema: object }[] };
+      return result as { tools: Tool[] };
     },
     async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
       return await client.callTool({ name, arguments: args });
@@ -425,7 +418,7 @@ export async function createUpstreamClient(
   };
 }
 
-async function listToolsMode(args: CLIArgs): Promise<void> {
+export async function listToolsMode(args: CLIArgs): Promise<void> {
   try {
     const config = createProxyConfig(args);
 
@@ -447,8 +440,6 @@ async function listToolsMode(args: CLIArgs): Promise<void> {
       });
       console.error(`Applied ${config.denyPatterns.length} filter pattern(s)`);
     }
-
-    console.error(`Found ${tools.length} tool(s)\n`);
 
     // Output to stdout (not stderr) so it can be piped/redirected
     const formatted = formatToolsList(tools, args.format || 'table');
