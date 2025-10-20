@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 describe('CLI Tool Listing Integration Tests', () => {
