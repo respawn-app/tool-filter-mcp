@@ -18,6 +18,7 @@ import type { EventSourceInit } from 'eventsource';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { formatStartupError } from './utils/error-handler.js';
 import { parseHeaders } from './utils/header-parser.js';
+import { formatCommandDisplay } from './utils/command-formatter.js';
 
 type ToolListFormat = 'table' | 'json' | 'names';
 
@@ -155,8 +156,8 @@ export function parseEnvVars(envArray: string[]): Record<string, string> {
   for (const envStr of envArray) {
     const separatorIndex = envStr.indexOf('=');
     if (separatorIndex === -1) {
-      console.error(`Warning: Invalid environment variable format: "${envStr}". Expected KEY=value format.`);
-      continue;
+      console.error(`Error: Invalid environment variable format: "${envStr}". Expected KEY=value format.`);
+      process.exit(1);
     }
 
     const key = envStr.slice(0, separatorIndex).trim();
@@ -580,17 +581,17 @@ export async function createStdioUpstreamClient(
 }
 
 export async function listToolsMode(args: CLIArgs): Promise<void> {
+  let upstreamClient: WrappedClient | null = null;
+
   try {
     const config = createProxyConfig(args);
 
     // Create upstream client based on config mode
-    let upstreamClient: WrappedClient;
-
     if (config.mode === 'http') {
       console.error(`Connecting to upstream MCP at ${config.upstreamUrl}...`);
       upstreamClient = await createUpstreamClient(config.upstreamUrl, config.headers);
     } else {
-      const commandDisplay = `${config.upstreamCommand} ${config.upstreamArgs.join(' ')}`;
+      const commandDisplay = formatCommandDisplay(config.upstreamCommand, config.upstreamArgs);
       console.error(`Connecting to upstream MCP via stdio: ${commandDisplay}...`);
       upstreamClient = await createStdioUpstreamClient(config.upstreamCommand, config.upstreamArgs, config.env);
     }
@@ -614,12 +615,14 @@ export async function listToolsMode(args: CLIArgs): Promise<void> {
     const formatted = formatToolsList(tools, args.format || 'table');
     // eslint-disable-next-line no-console
     console.log(formatted);
-
-    upstreamClient.disconnect();
   } catch (error) {
     const errorMessage = formatStartupError(error);
     console.error(`Error: ${errorMessage}`);
     process.exit(1);
+  } finally {
+    if (upstreamClient) {
+      upstreamClient.disconnect();
+    }
   }
 }
 
@@ -642,13 +645,18 @@ async function main(): Promise<void> {
       console.error(`Connecting to upstream MCP at ${config.upstreamUrl}...`);
       upstreamClient = await createUpstreamClient(config.upstreamUrl, config.headers);
     } else {
-      const commandDisplay = `${config.upstreamCommand} ${config.upstreamArgs.join(' ')}`;
+      const commandDisplay = formatCommandDisplay(config.upstreamCommand, config.upstreamArgs);
       console.error(`Connecting to upstream MCP via stdio: ${commandDisplay}...`);
       upstreamClient = await createStdioUpstreamClient(config.upstreamCommand, config.upstreamArgs, config.env);
     }
 
     const proxy = new ProxyOrchestrator(config, upstreamClient);
-    await proxy.startup();
+    try {
+      await proxy.startup();
+    } catch (error) {
+      upstreamClient.disconnect();
+      throw error;
+    }
 
     const filteredTools = proxy.getCachedTools();
     console.error(

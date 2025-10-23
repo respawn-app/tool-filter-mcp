@@ -36,16 +36,14 @@ describe('env-parser', () => {
       expect(envVars).toEqual({ CONNECTION_STRING: 'postgresql://user:pass@localhost:5432/db' });
     });
 
-    it('should warn and skip entries missing equals sign', () => {
+    it('should exit when entry is missing equals sign', () => {
       const consoleSpy = { calls: [] as string[] };
       const originalError = console.error;
       console.error = (...args: string[]) => {
         consoleSpy.calls.push(args.join(' '));
       };
 
-      const envVars = parseEnvVars(['InvalidEntry', 'VALID=value']);
-
-      expect(envVars).toEqual({ VALID: 'value' });
+      expect(() => parseEnvVars(['InvalidEntry'])).toThrow('process.exit unexpectedly called with "1"');
       expect(consoleSpy.calls.some(call => call.includes('Invalid environment variable format'))).toBe(true);
       expect(consoleSpy.calls.some(call => call.includes('InvalidEntry'))).toBe(true);
 
@@ -98,27 +96,23 @@ describe('env-parser', () => {
       });
     });
 
-    it('should handle mixed valid and invalid entries', () => {
+    it('should exit on first invalid entry when mixed with valid entries', () => {
       const consoleSpy = { calls: [] as string[] };
       const originalError = console.error;
       console.error = (...args: string[]) => {
         consoleSpy.calls.push(args.join(' '));
       };
 
-      const envVars = parseEnvVars([
+      // Should process VALID1, then exit on InvalidEntry
+      expect(() => parseEnvVars([
         'VALID1=value1',
         'InvalidEntry',
         'VALID2=value2',
         '=emptykey',
         'VALID3=value3'
-      ]);
+      ])).toThrow('process.exit unexpectedly called with "1"');
 
-      expect(envVars).toEqual({
-        'VALID1': 'value1',
-        'VALID2': 'value2',
-        'VALID3': 'value3'
-      });
-      expect(consoleSpy.calls.length).toBeGreaterThan(0);
+      expect(consoleSpy.calls.some(call => call.includes('Invalid environment variable format'))).toBe(true);
 
       console.error = originalError;
     });
