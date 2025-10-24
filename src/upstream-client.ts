@@ -14,18 +14,18 @@ export interface MCPClient {
 }
 
 export class UpstreamConnection {
-  private url: string;
+  private identifier: string;
   private client: MCPClient;
   private timeouts: UpstreamTimeouts;
   private connected: boolean = false;
   private toolCache: FilteredTool[] | null = null;
 
   constructor(
-    url: string,
+    identifier: string,
     client: MCPClient,
     timeouts: UpstreamTimeouts = { connection: 30000, toolList: 10000 }
   ) {
-    this.url = url;
+    this.identifier = identifier;
     this.client = client;
     this.timeouts = timeouts;
   }
@@ -85,8 +85,8 @@ export class UpstreamConnection {
     return this.connected && this.client.isConnected();
   }
 
-  getUrl(): string {
-    return this.url;
+  getIdentifier(): string {
+    return this.identifier;
   }
 
   getCachedTools(): FilteredTool[] | null {

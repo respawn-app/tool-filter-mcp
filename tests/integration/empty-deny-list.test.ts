@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { ProxyOrchestrator } from '../../src/proxy.js';
-import { ProxyConfig } from '../../src/types.js';
+import { HttpProxyConfig } from '../../src/types.js';
 import { createMockServer } from '../fixtures/mock-mcp-server.js';
 import { sampleTools, allTools } from '../fixtures/sample-tools.js';
 
 describe('Empty Deny List', () => {
   it('should expose all tools when no deny patterns', async () => {
     const mockServer = createMockServer(sampleTools);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: [],
       timeouts: {
@@ -26,7 +27,8 @@ describe('Empty Deny List', () => {
 
   it('should allow all tool calls when no deny patterns', async () => {
     const mockServer = createMockServer(sampleTools);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: [],
       timeouts: {
@@ -46,7 +48,8 @@ describe('Empty Deny List', () => {
 
   it('should expose all upstream tools with empty deny list', async () => {
     const mockServer = createMockServer(allTools);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: [],
       timeouts: {
@@ -72,7 +75,8 @@ describe('Empty Deny List', () => {
 
   it('should preserve tool order from upstream', async () => {
     const mockServer = createMockServer(sampleTools);
-    const config: ProxyConfig = {
+    const config: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: [],
       timeouts: {

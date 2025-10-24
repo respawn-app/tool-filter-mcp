@@ -31,19 +31,47 @@ This project is fully vibe-coded with claude. Contributions welcome!
 ## Installation
 
 ```bash
+# For HTTP/SSE MCP servers
 npx @respawn-app/tool-filter-mcp --upstream <url> --deny <patterns>
+
+# For stdio MCP servers
+npx @respawn-app/tool-filter-mcp --upstream-stdio --deny <patterns> -- <command> [args...]
 ```
 
 ## Usage
 
-### Basic Example
+### Basic Example (HTTP/SSE)
 
-Filter tools matching `.*_file$` pattern:
+Filter tools matching `.*_file$` pattern from an HTTP MCP server:
 
 ```bash
 npx @respawn-app/tool-filter-mcp \
   --upstream http://localhost:3000/sse \
   --deny ".*_file$"
+```
+
+### Basic Example (stdio)
+
+Filter tools from a local stdio MCP server:
+
+```bash
+npx @respawn-app/tool-filter-mcp \
+  --upstream-stdio \
+  --deny "dangerous_.*" \
+  -- npx my-mcp-server
+```
+
+### With Environment Variables (stdio)
+
+Pass environment variables to the upstream stdio server:
+
+```bash
+npx @respawn-app/tool-filter-mcp \
+  --upstream-stdio \
+  --env "API_KEY=secret123" \
+  --env "DEBUG=true" \
+  --deny "admin_.*" \
+  -- npx my-mcp-server
 ```
 
 ### Multiple Patterns
@@ -104,12 +132,14 @@ npx @respawn-app/tool-filter-mcp \
 
 ### With Claude Code
 
+#### HTTP/SSE Upstream Server
+
 Add to your `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
-    "filtered-server": {
+    "filtered-http-server": {
       "command": "npx",
       "args": [
         "@respawn-app/tool-filter-mcp",
@@ -129,7 +159,7 @@ With authentication headers (supports environment variable expansion):
 ```json
 {
   "mcpServers": {
-    "filtered-server": {
+    "filtered-http-server": {
       "command": "npx",
       "args": [
         "@respawn-app/tool-filter-mcp",
@@ -138,7 +168,105 @@ With authentication headers (supports environment variable expansion):
         "--header",
         "Authorization: Bearer ${API_TOKEN}",
         "--header",
-        "X-Custom-Header: $CUSTOM_VALUE"
+        "X-Custom-Header: $CUSTOM_VALUE",
+        "--deny",
+        "sensitive_.*"
+      ],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+#### Stdio Upstream Server
+
+```json
+{
+  "mcpServers": {
+    "filtered-zen": {
+      "command": "npx",
+      "args": [
+        "@respawn-app/tool-filter-mcp",
+        "--upstream-stdio",
+        "--deny",
+        "dangerous_.*,sensitive_.*",
+        "--",
+        "npx",
+        "my-mcp-server"
+      ],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+With multiple arguments to the upstream server:
+
+```json
+{
+  "mcpServers": {
+    "filtered-stdio-server": {
+      "command": "npx",
+      "args": [
+        "@respawn-app/tool-filter-mcp",
+        "--upstream-stdio",
+        "--deny",
+        "admin_.*",
+        "--",
+        "node",
+        "my-mcp-server.js",
+        "--config=config.json",
+        "--verbose"
+      ],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+With arguments that start with dashes (like uvx):
+
+```json
+{
+  "mcpServers": {
+    "filtered-uvx-server": {
+      "command": "npx",
+      "args": [
+        "@respawn-app/tool-filter-mcp",
+        "--upstream-stdio",
+        "--deny",
+        "test_.*",
+        "--",
+        "uvx",
+        "--from",
+        "git+https://github.com/BeehiveInnovations/zen-mcp-server.git",
+        "zen-mcp-server"
+      ],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+With environment variables for the upstream stdio server:
+
+```json
+{
+  "mcpServers": {
+    "filtered-server-with-env": {
+      "command": "npx",
+      "args": [
+        "@respawn-app/tool-filter-mcp",
+        "--upstream-stdio",
+        "--env",
+        "API_KEY=${MY_API_KEY}",
+        "--env",
+        "DEBUG=true",
+        "--deny",
+        "admin_.*",
+        "--",
+        "npx",
+        "my-mcp-server"
       ],
       "type": "stdio"
     }
@@ -148,22 +276,56 @@ With authentication headers (supports environment variable expansion):
 
 ## CLI Options
 
-- `--upstream <url>` (required): Upstream MCP server URL (SSE transport)
+### Tool list
+
+Print the list of available tools without starting a proxy server
+
+- `--list-tools`: List available tools from upstream and exit
+- `--format <type>`: Output format for `--list-tools` (default: `table`)
+    - `table`: Human-readable table with descriptions (truncated to 100 chars)
+    - `json`: Full JSON output with complete schemas
+    - `names`: Comma-separated tool names for easy copy-paste
+
+### Connection Mode (mutually exclusive)
+
+To start the proxy server, you must specify exactly one of:
+
+- `--upstream <url>`: Connect to upstream HTTP/SSE MCP server
+- `--upstream-stdio`: Spawn and connect to upstream stdio MCP server
+  - Requires command and arguments after `--` separator
+  - Example: `--upstream-stdio -- npx zen-mcp-server`
+
+### Common Options
+
 - `--deny <patterns>`: Comma-separated regex patterns for tools to filter
+
+### HTTP/SSE Mode Options
+
+Only applicable with `--upstream`:
+
 - `--header <name:value>`: Custom HTTP header to pass to upstream server (can be repeated for multiple headers)
   - Format: `--header "Header-Name: value"`
   - Supports environment variable expansion: `$VAR` or `${VAR}`
   - Example: `--header "Authorization: Bearer $TOKEN"`
-- `--list-tools`: List available tools from upstream and exit (does not start proxy server)
-- `--format <type>`: Output format for `--list-tools` (default: `table`)
-  - `table`: Human-readable table with descriptions (truncated to 100 chars)
-  - `json`: Full JSON output with complete schemas
-  - `names`: Comma-separated tool names for easy copy-paste
+
+### Stdio Mode Options
+
+Only applicable with `--upstream-stdio`:
+
+- `--env <KEY=value>`: Environment variable to pass to the upstream stdio server (can be repeated for multiple variables)
+  - Format: `--env "KEY=value"`
+  - Example: `--env "API_KEY=secret" --env "DEBUG=true"`
+- After the `--` separator, provide the command and all its arguments
+  - Everything after `--` is passed to the upstream server
+  - Supports arguments starting with dashes (like `--from`, `--config`, etc.)
+  - Example: `--upstream-stdio -- uvx --from git+https://... package-name`
 
 ## Requirements
 
 - Node.js >= 20.0.0
-- Upstream MCP server with SSE transport
+- Upstream MCP server with:
+  - SSE or Streamable HTTP transport (for `--upstream`), OR
+  - stdio transport (for `--upstream-stdio`)
 
 ## License
 

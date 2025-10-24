@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ProxyOrchestrator } from '../../src/proxy.js';
-import { ProxyConfig } from '../../src/types.js';
+import { HttpProxyConfig } from '../../src/types.js';
 import { createMockServer } from '../fixtures/mock-mcp-server.js';
 import { allTools } from '../fixtures/sample-tools.js';
 
@@ -9,7 +9,8 @@ describe('Multiple Proxy Instances', () => {
     const mockServer1 = createMockServer(allTools);
     const mockServer2 = createMockServer(allTools);
 
-    const config1: ProxyConfig = {
+    const config1: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['.*_file$'],
       timeouts: {
@@ -18,7 +19,8 @@ describe('Multiple Proxy Instances', () => {
       },
     };
 
-    const config2: ProxyConfig = {
+    const config2: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3001',
       denyPatterns: ['.*_database$'],
       timeouts: {
@@ -55,7 +57,8 @@ describe('Multiple Proxy Instances', () => {
     const mockServer1 = createMockServer(allTools);
     const mockServer2 = createMockServer(allTools);
 
-    const config1: ProxyConfig = {
+    const config1: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: [],
       timeouts: {
@@ -64,7 +67,8 @@ describe('Multiple Proxy Instances', () => {
       },
     };
 
-    const config2: ProxyConfig = {
+    const config2: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3001',
       denyPatterns: ['.*'],
       timeouts: {
@@ -87,7 +91,8 @@ describe('Multiple Proxy Instances', () => {
     const mockServer1 = createMockServer(allTools);
     const mockServer2 = createMockServer(allTools);
 
-    const config1: ProxyConfig = {
+    const config1: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['read_file'],
       timeouts: {
@@ -96,7 +101,8 @@ describe('Multiple Proxy Instances', () => {
       },
     };
 
-    const config2: ProxyConfig = {
+    const config2: HttpProxyConfig = {
+      mode: 'http',
       upstreamUrl: 'http://localhost:3001',
       denyPatterns: ['write_file'],
       timeouts: {

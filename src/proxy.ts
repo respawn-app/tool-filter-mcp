@@ -1,6 +1,7 @@
 import { ProxyConfig, FilteredTool } from './types.js';
 import { UpstreamConnection, MCPClient } from './upstream-client.js';
 import { applyFilters } from './filter.js';
+import { formatCommandDisplay } from './utils/command-formatter.js';
 
 export class ProxyOrchestrator {
   private config: ProxyConfig;
@@ -10,8 +11,14 @@ export class ProxyOrchestrator {
 
   constructor(config: ProxyConfig, client: MCPClient) {
     this.config = config;
+
+    // Determine identifier string based on config mode
+    const identifier = config.mode === 'http'
+      ? config.upstreamUrl
+      : formatCommandDisplay(config.upstreamCommand, config.upstreamArgs);
+
     this.upstreamConnection = new UpstreamConnection(
-      config.upstreamUrl,
+      identifier,
       client,
       config.timeouts
     );

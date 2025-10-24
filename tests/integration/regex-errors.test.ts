@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ProxyOrchestrator } from '../../src/proxy.js';
-import { ProxyConfig } from '../../src/types.js';
+import { HttpProxyConfig } from '../../src/types.js';
 import { createMockServer } from '../fixtures/mock-mcp-server.js';
 import { sampleTools } from '../fixtures/sample-tools.js';
 
@@ -8,7 +8,8 @@ describe('Regex Error Handling', () => {
   describe('Invalid regex patterns', () => {
     it('should reject invalid regex at startup', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['^[a-z'],
         timeouts: {
@@ -23,7 +24,8 @@ describe('Regex Error Handling', () => {
 
     it('should reject invalid regex with clear error message', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['(abc'],
         timeouts: {
@@ -45,7 +47,8 @@ describe('Regex Error Handling', () => {
 
     it('should fail before connecting to upstream with invalid regex', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['[unclosed'],
         timeouts: {
@@ -63,7 +66,8 @@ describe('Regex Error Handling', () => {
   describe('ReDoS detection', () => {
     it('should reject unsafe regex patterns at startup', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['(a+)+'],
         timeouts: {
@@ -78,7 +82,8 @@ describe('Regex Error Handling', () => {
 
     it('should detect catastrophic backtracking patterns', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['(x+)*'],
         timeouts: {
@@ -100,7 +105,8 @@ describe('Regex Error Handling', () => {
 
     it('should reject nested quantifiers', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['(a*)*'],
         timeouts: {
@@ -117,7 +123,8 @@ describe('Regex Error Handling', () => {
   describe('Multiple pattern validation', () => {
     it('should validate all patterns and fail on first invalid', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['^valid$', '^[invalid', '^also_valid$'],
         timeouts: {
@@ -132,7 +139,8 @@ describe('Regex Error Handling', () => {
 
     it('should validate all patterns and fail on first unsafe', async () => {
       const mockServer = createMockServer(sampleTools);
-      const config: ProxyConfig = {
+      const config: HttpProxyConfig = {
+        mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['^safe$', '(a+)+', '^also_safe$'],
         timeouts: {
