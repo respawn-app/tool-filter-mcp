@@ -69,12 +69,6 @@ export function parseCLIArgs(): CLIArgs {
     allowPositionals: true,
   });
 
-  if (!values.upstream) {
-    console.error('Error: --upstream argument is required');
-    console.error('Usage: tool-filter-mcp --upstream <url> [--deny <patterns>] [--header <name:value>]');
-    process.exit(1);
-  }
-
   const upstream = values.upstream;
   const upstreamStdio = values['upstream-stdio'];
   const deny = values.deny;
