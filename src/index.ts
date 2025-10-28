@@ -26,6 +26,7 @@ interface CLIArgs {
   upstream?: string;
   upstreamStdio?: boolean;
   deny?: string;
+  allow?: string;
   header?: string[];
   env?: string[];
   positionals: string[];
@@ -46,6 +47,10 @@ export function parseCLIArgs(): CLIArgs {
       deny: {
         type: 'string',
         short: 'd',
+      },
+      allow: {
+        type: 'string',
+        short: 'a',
       },
       header: {
         type: 'string',
@@ -72,6 +77,7 @@ export function parseCLIArgs(): CLIArgs {
   const upstream = values.upstream;
   const upstreamStdio = values['upstream-stdio'];
   const deny = values.deny;
+  const allow = values.allow;
   const header = values.header;
   const env = values.env;
   const listTools = values['list-tools'];
@@ -80,8 +86,8 @@ export function parseCLIArgs(): CLIArgs {
   // Validate mutual exclusion
   if (!upstream && !upstreamStdio) {
     console.error('Error: Either --upstream or --upstream-stdio is required');
-    console.error('Usage (HTTP): tool-filter-mcp --upstream <url> [--deny <patterns>] [--header <name:value>]');
-    console.error('Usage (stdio): tool-filter-mcp --upstream-stdio [--deny <patterns>] [--env <KEY=value>] -- <command> [args...]');
+    console.error('Usage (HTTP): tool-filter-mcp --upstream <url> [--deny <patterns> | --allow <patterns>] [--header <name:value>]');
+    console.error('Usage (stdio): tool-filter-mcp --upstream-stdio [--deny <patterns> | --allow <patterns>] [--env <KEY=value>] -- <command> [args...]');
     process.exit(1);
   }
 
@@ -90,6 +96,12 @@ export function parseCLIArgs(): CLIArgs {
     console.error(
       'Use --upstream for HTTP/SSE servers or --upstream-stdio for stdio servers, but not both'
     );
+    process.exit(1);
+  }
+
+  // Validate that --deny and --allow are mutually exclusive
+  if (deny && allow) {
+    console.error('Error: --deny and --allow cannot be used together. Choose one filtering mode.');
     process.exit(1);
   }
 
@@ -136,6 +148,7 @@ export function parseCLIArgs(): CLIArgs {
     upstream,
     upstreamStdio,
     deny,
+    allow,
     header,
     env,
     listTools,
@@ -173,6 +186,10 @@ export function createProxyConfig(args: CLIArgs): ProxyConfig {
     ? args.deny.split(',').map((p) => p.trim()).filter((p) => p.length > 0)
     : [];
 
+  const allowPatterns = args.allow
+    ? args.allow.split(',').map((p) => p.trim()).filter((p) => p.length > 0)
+    : [];
+
   const timeouts = {
     connection: 30000,
     toolList: 10000,
@@ -188,6 +205,8 @@ export function createProxyConfig(args: CLIArgs): ProxyConfig {
       mode: 'http',
       upstreamUrl: args.upstream,
       denyPatterns,
+      allowPatterns,
+      filterMode: args.allow !== undefined ? 'allow' : 'deny',
       headers,
       timeouts,
     };
@@ -205,6 +224,8 @@ export function createProxyConfig(args: CLIArgs): ProxyConfig {
       upstreamCommand,
       upstreamArgs,
       denyPatterns,
+      allowPatterns,
+      filterMode: args.allow !== undefined ? 'allow' : 'deny',
       env,
       timeouts,
     };
@@ -596,13 +617,19 @@ export async function listToolsMode(args: CLIArgs): Promise<void> {
     const result = await upstreamClient.listTools();
     let tools = result.tools;
 
-    // Apply filtering if deny patterns are provided
-    if (config.denyPatterns.length > 0) {
+    // Apply filtering based on mode
+    if (config.filterMode === 'deny' && config.denyPatterns.length > 0) {
       const patterns = config.denyPatterns.map((pattern) => new RegExp(pattern));
       tools = tools.filter((tool) => {
         return !patterns.some((pattern) => pattern.test(tool.name));
       });
-      console.error(`Applied ${config.denyPatterns.length} filter pattern(s)`);
+      console.error(`Applied ${config.denyPatterns.length} deny pattern(s)`);
+    } else if (config.filterMode === 'allow' && config.allowPatterns.length > 0) {
+      const patterns = config.allowPatterns.map((pattern) => new RegExp(pattern));
+      tools = tools.filter((tool) => {
+        return patterns.some((pattern) => pattern.test(tool.name));
+      });
+      console.error(`Applied ${config.allowPatterns.length} allow pattern(s)`);
     }
 
     // Output to stdout (not stderr) so it can be piped/redirected
@@ -657,8 +684,10 @@ async function main(): Promise<void> {
       `Proxy ready. Filtered ${filteredTools.length} tools from upstream.`
     );
 
-    if (config.denyPatterns.length > 0) {
+    if (config.filterMode === 'deny' && config.denyPatterns.length > 0) {
       console.error(`Deny patterns: ${config.denyPatterns.join(', ')}`);
+    } else if (config.filterMode === 'allow' && config.allowPatterns.length > 0) {
+      console.error(`Allow patterns: ${config.allowPatterns.join(', ')}`);
     }
 
     if (config.mode === 'http' && config.headers && Object.keys(config.headers).length > 0) {

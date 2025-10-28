@@ -33,6 +33,8 @@ describe('Stdio transport integration', () => {
       upstreamCommand: 'node',
       upstreamArgs: ['server.js'],
       denyPatterns: ['dangerous_.*'],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -60,6 +62,8 @@ describe('Stdio transport integration', () => {
       upstreamCommand: 'npx',
       upstreamArgs: ['some-mcp-server'],
       denyPatterns: ['^get_.*'],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -89,6 +93,8 @@ describe('Stdio transport integration', () => {
       upstreamCommand: 'node',
       upstreamArgs: ['server.js', '--port=3000', '--config=test.json'],
       denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -115,6 +121,8 @@ describe('Stdio transport integration', () => {
       upstreamCommand: 'node',
       upstreamArgs: [],
       denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -132,6 +140,8 @@ describe('Stdio transport integration', () => {
       upstreamCommand: 'node',
       upstreamArgs: ['server.js'],
       denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
       env: {
         'API_KEY': 'secret123',
         'DEBUG': 'true',

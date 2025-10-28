@@ -13,6 +13,8 @@ describe('Multiple Proxy Instances', () => {
       mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['.*_file$'],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -23,6 +25,8 @@ describe('Multiple Proxy Instances', () => {
       mode: 'http',
       upstreamUrl: 'http://localhost:3001',
       denyPatterns: ['.*_database$'],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -61,6 +65,8 @@ describe('Multiple Proxy Instances', () => {
       mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -71,6 +77,8 @@ describe('Multiple Proxy Instances', () => {
       mode: 'http',
       upstreamUrl: 'http://localhost:3001',
       denyPatterns: ['.*'],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -95,6 +103,8 @@ describe('Multiple Proxy Instances', () => {
       mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['read_file'],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -105,6 +115,8 @@ describe('Multiple Proxy Instances', () => {
       mode: 'http',
       upstreamUrl: 'http://localhost:3001',
       denyPatterns: ['write_file'],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,

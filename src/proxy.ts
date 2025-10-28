@@ -29,7 +29,12 @@ export class ProxyOrchestrator {
 
     const tools = await this.upstreamConnection.fetchTools();
 
-    const filterResult = applyFilters(tools, this.config.denyPatterns);
+    const filterResult = applyFilters(
+      tools,
+      this.config.denyPatterns,
+      this.config.allowPatterns,
+      this.config.filterMode
+    );
 
     this.filteredTools = filterResult.allowed;
     this.ready = true;

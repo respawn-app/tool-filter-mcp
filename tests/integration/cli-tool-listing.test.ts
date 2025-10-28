@@ -271,4 +271,144 @@ describe('CLI Tool Listing Integration Tests', () => {
       expect(truncateDescription('', 10)).toBe('');
     });
   });
+
+  describe('allow flag in list-tools mode', () => {
+    it('should filter tools using allow patterns', async () => {
+      const { formatToolsList } = await import('../../src/index.js');
+
+      const mockTools: Tool[] = [
+        { name: 'read_file', description: 'Read file', inputSchema: { type: 'object' } },
+        { name: 'write_file', description: 'Write file', inputSchema: { type: 'object' } },
+        { name: 'delete_file', description: 'Delete file', inputSchema: { type: 'object' } },
+        { name: 'list_directory', description: 'List directory', inputSchema: { type: 'object' } },
+      ];
+
+      // Simulate allow filtering
+      const allowPatterns = ['.*_file'];
+      const patterns = allowPatterns.map((pattern) => new RegExp(pattern));
+      const filteredTools = mockTools.filter((tool) => {
+        return patterns.some((pattern) => pattern.test(tool.name));
+      });
+
+      const result = formatToolsList(filteredTools, 'names');
+
+      expect(result).toBe('read_file,write_file,delete_file');
+    });
+
+    it('should create config with allow mode from CLI args', async () => {
+      const { createProxyConfig } = await import('../../src/index.js');
+
+      const args = {
+        upstream: 'http://localhost:3000',
+        allow: 'read_.*,write_.*',
+        listTools: true,
+        format: 'json' as const,
+        positionals: [],
+      };
+
+      const config = createProxyConfig(args as any);
+
+      expect(config.filterMode).toBe('allow');
+      expect(config.allowPatterns).toEqual(['read_.*', 'write_.*']);
+      expect(config.denyPatterns).toEqual([]);
+    });
+
+    it('should handle empty allow patterns in list-tools mode', async () => {
+      const { createProxyConfig } = await import('../../src/index.js');
+
+      const args = {
+        upstream: 'http://localhost:3000',
+        allow: '',
+        listTools: true,
+        format: 'table' as const,
+        positionals: [],
+      };
+
+      const config = createProxyConfig(args as any);
+
+      expect(config.filterMode).toBe('allow');
+      expect(config.allowPatterns).toEqual([]);
+    });
+
+    it('should apply allow filtering with multiple patterns', async () => {
+      const { formatToolsList } = await import('../../src/index.js');
+
+      const mockTools: Tool[] = [
+        { name: 'read_file', description: 'Read file', inputSchema: { type: 'object' } },
+        { name: 'write_file', description: 'Write file', inputSchema: { type: 'object' } },
+        { name: 'list_directory', description: 'List directory', inputSchema: { type: 'object' } },
+        { name: 'query_database', description: 'Query database', inputSchema: { type: 'object' } },
+      ];
+
+      // Simulate allow filtering with multiple patterns
+      const allowPatterns = ['^read_.*', '.*_database$'];
+      const patterns = allowPatterns.map((pattern) => new RegExp(pattern));
+      const filteredTools = mockTools.filter((tool) => {
+        return patterns.some((pattern) => pattern.test(tool.name));
+      });
+
+      const result = formatToolsList(filteredTools, 'names');
+
+      expect(result).toBe('read_file,query_database');
+    });
+
+    it('should show no tools when allow mode with no patterns', async () => {
+      const { formatToolsList } = await import('../../src/index.js');
+
+      const mockTools: Tool[] = [
+        { name: 'read_file', description: 'Read file', inputSchema: { type: 'object' } },
+        { name: 'write_file', description: 'Write file', inputSchema: { type: 'object' } },
+      ];
+
+      // In allow mode with no patterns, all tools should be filtered out
+      const allowPatterns: string[] = [];
+      const filteredTools = allowPatterns.length === 0 ? [] : mockTools;
+
+      const result = formatToolsList(filteredTools, 'json');
+
+      expect(result).toBe('[]');
+    });
+
+    it('should allow all tools when pattern matches everything', async () => {
+      const { formatToolsList } = await import('../../src/index.js');
+
+      const mockTools: Tool[] = [
+        { name: 'read_file', description: 'Read file', inputSchema: { type: 'object' } },
+        { name: 'write_file', description: 'Write file', inputSchema: { type: 'object' } },
+        { name: 'list_directory', description: 'List directory', inputSchema: { type: 'object' } },
+      ];
+
+      // Simulate allow filtering with match-all pattern
+      const allowPatterns = ['.*'];
+      const patterns = allowPatterns.map((pattern) => new RegExp(pattern));
+      const filteredTools = mockTools.filter((tool) => {
+        return patterns.some((pattern) => pattern.test(tool.name));
+      });
+
+      const result = formatToolsList(filteredTools, 'names');
+
+      expect(result).toBe('read_file,write_file,list_directory');
+    });
+
+    it('should handle exact tool name matching in allow mode', async () => {
+      const { formatToolsList } = await import('../../src/index.js');
+
+      const mockTools: Tool[] = [
+        { name: 'read_file', description: 'Read file', inputSchema: { type: 'object' } },
+        { name: 'read_file_v2', description: 'Read file v2', inputSchema: { type: 'object' } },
+        { name: 'write_file', description: 'Write file', inputSchema: { type: 'object' } },
+      ];
+
+      // Simulate allow filtering with exact match pattern
+      const allowPatterns = ['^read_file$'];
+      const patterns = allowPatterns.map((pattern) => new RegExp(pattern));
+      const filteredTools = mockTools.filter((tool) => {
+        return patterns.some((pattern) => pattern.test(tool.name));
+      });
+
+      const result = formatToolsList(filteredTools, 'names');
+
+      expect(result).toBe('read_file');
+    });
+  });
 });

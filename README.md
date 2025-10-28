@@ -21,7 +21,9 @@ This project is fully vibe-coded with claude. Contributions welcome!
 
 ## Features
 
-- **Tool Filtering**: Block specific tools using regex patterns
+- **Tool Filtering**: Block or allow specific tools using regex patterns
+  - **Deny Mode**: Exclude tools matching patterns (blacklist)
+  - **Allow Mode**: Only include tools matching patterns (whitelist)
 - **Tool Discovery**: List available tools with multiple output formats (table, JSON, names)
 - **Header Pass-Through**: Add custom HTTP headers for authentication
 - **Zero Latency**: Cached tool list, minimal overhead
@@ -32,17 +34,19 @@ This project is fully vibe-coded with claude. Contributions welcome!
 
 ```bash
 # For HTTP/SSE MCP servers
-npx @respawn-app/tool-filter-mcp --upstream <url> --deny <patterns>
+npx @respawn-app/tool-filter-mcp --upstream <url> [--deny <patterns> | --allow <patterns>]
 
 # For stdio MCP servers
-npx @respawn-app/tool-filter-mcp --upstream-stdio --deny <patterns> -- <command> [args...]
+npx @respawn-app/tool-filter-mcp --upstream-stdio [--deny <patterns> | --allow <patterns>] -- <command> [args...]
 ```
 
 ## Usage
 
-### Basic Example (HTTP/SSE)
+### Deny Mode (Blacklist)
 
-Filter tools matching `.*_file$` pattern from an HTTP MCP server:
+Filter out tools matching regex patterns. All tools **except** those matching the patterns will be available.
+
+**Basic Example (HTTP/SSE)** - Block file operations:
 
 ```bash
 npx @respawn-app/tool-filter-mcp \
@@ -50,15 +54,21 @@ npx @respawn-app/tool-filter-mcp \
   --deny ".*_file$"
 ```
 
-### Basic Example (stdio)
-
-Filter tools from a local stdio MCP server:
+**Basic Example (stdio)** - Filter tools from a local stdio MCP server:
 
 ```bash
 npx @respawn-app/tool-filter-mcp \
   --upstream-stdio \
   --deny "dangerous_.*" \
   -- npx my-mcp-server
+```
+
+**Multiple Patterns** - Use comma-separated patterns:
+
+```bash
+npx @respawn-app/tool-filter-mcp \
+  --upstream http://localhost:3000/sse \
+  --deny "get_file_text,create_new_file,replace_text"
 ```
 
 ### With Environment Variables (stdio)
@@ -74,14 +84,24 @@ npx @respawn-app/tool-filter-mcp \
   -- npx my-mcp-server
 ```
 
-### Multiple Patterns
+### Allow Mode (Whitelist)
 
-Use comma-separated patterns:
+Only allow tools matching regex patterns. **Only** tools matching the patterns will be available.
+
+**Basic Example** - Only allow read operations:
 
 ```bash
 npx @respawn-app/tool-filter-mcp \
   --upstream http://localhost:3000/sse \
-  --deny "get_file_text,create_new_file,replace_text"
+  --allow "^read_.*,^get_.*"
+```
+
+**Specific Tools** - Allow only specific tools:
+
+```bash
+npx @respawn-app/tool-filter-mcp \
+  --upstream http://localhost:3000/sse \
+  --allow "^read_file$,^list_dir$,^get_env$"
 ```
 
 ### With Authentication Headers
@@ -134,7 +154,7 @@ npx @respawn-app/tool-filter-mcp \
 
 #### HTTP/SSE Upstream Server
 
-Add to your `.mcp.json`:
+**Deny Mode Example** - Block dangerous tools:
 
 ```json
 {
@@ -154,6 +174,26 @@ Add to your `.mcp.json`:
 }
 ```
 
+**Allow Mode Example** - Only allow specific tools:
+
+```json
+{
+  "mcpServers": {
+    "filtered-server": {
+      "command": "npx",
+      "args": [
+        "@respawn-app/tool-filter-mcp",
+        "--upstream",
+        "http://localhost:3000/sse",
+        "--allow",
+        "^read_.*,^list_.*"
+      ],
+      "type": "stdio"
+    }
+  }
+}
+```
+
 With authentication headers (supports environment variable expansion):
 
 ```json
@@ -165,6 +205,8 @@ With authentication headers (supports environment variable expansion):
         "@respawn-app/tool-filter-mcp",
         "--upstream",
         "http://localhost:3000/sse",
+        "--allow",
+        "^read_.*",
         "--header",
         "Authorization: Bearer ${API_TOKEN}",
         "--header",
@@ -297,7 +339,12 @@ To start the proxy server, you must specify exactly one of:
 
 ### Common Options
 
-- `--deny <patterns>`: Comma-separated regex patterns for tools to filter
+- `--deny <patterns>`: Comma-separated regex patterns for tools to **exclude** (deny mode/blacklist)
+  - Cannot be used with `--allow`
+  - All tools **except** those matching these patterns will be available
+- `--allow <patterns>`: Comma-separated regex patterns for tools to **include** (allow mode/whitelist)
+  - Cannot be used with `--deny`
+  - **Only** tools matching these patterns will be available
 
 ### HTTP/SSE Mode Options
 
@@ -319,6 +366,8 @@ Only applicable with `--upstream-stdio`:
   - Everything after `--` is passed to the upstream server
   - Supports arguments starting with dashes (like `--from`, `--config`, etc.)
   - Example: `--upstream-stdio -- uvx --from git+https://... package-name`
+
+**Note**: You must choose either `--deny` or `--allow` mode, not both. If neither is specified, all tools will be available (deny mode with no patterns).
 
 ## Requirements
 

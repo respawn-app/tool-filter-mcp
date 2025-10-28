@@ -12,6 +12,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -30,6 +32,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_file$'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -50,6 +54,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:9999',
         denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -67,6 +73,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['^[a-z'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -83,6 +91,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['(a+)+'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -99,6 +109,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -120,6 +132,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_database$'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -140,6 +154,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -162,6 +178,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -180,6 +198,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_file$'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -199,6 +219,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_file$'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -218,6 +240,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -236,6 +260,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -254,6 +280,8 @@ describe('ProxyOrchestrator', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,

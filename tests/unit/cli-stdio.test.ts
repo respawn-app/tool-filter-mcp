@@ -241,4 +241,189 @@ describe('CLI stdio argument parsing', () => {
     expect(result.stderr).not.toContain('Either --upstream or --upstream-stdio is required');
     expect(result.stderr).toContain('Connecting to upstream MCP via stdio: node server.js');
   });
+
+  describe('--allow flag tests', () => {
+    it('should accept --allow flag with HTTP upstream', async () => {
+      const result = await runCLI([
+        '--upstream',
+        'http://localhost:3000',
+        '--allow',
+        'read_.*,write_.*',
+      ], 500);
+
+      // Should not show CLI validation errors
+      expect(result.stderr).not.toContain('mutually exclusive');
+      expect(result.stderr).not.toContain('Either --upstream or --upstream-stdio is required');
+      expect(result.stderr).toContain('Connecting to upstream MCP at http://localhost:3000');
+    });
+
+    it('should accept --allow flag with stdio upstream', async () => {
+      const result = await runCLI([
+        '--upstream-stdio',
+        '--allow',
+        'list_.*',
+        '--',
+        'node',
+        'server.js',
+      ], 500);
+
+      // Should not show CLI validation errors
+      expect(result.stderr).not.toContain('mutually exclusive');
+      expect(result.stderr).not.toContain('Either --upstream or --upstream-stdio is required');
+      expect(result.stderr).toContain('Connecting to upstream MCP via stdio: node server.js');
+    });
+
+    it('should accept -a as short form for --allow', async () => {
+      const result = await runCLI([
+        '--upstream',
+        'http://localhost:3000',
+        '-a',
+        'tool_.*',
+      ], 500);
+
+      // Should not show CLI validation errors
+      expect(result.stderr).not.toContain('mutually exclusive');
+      expect(result.stderr).not.toContain('Either --upstream or --upstream-stdio is required');
+    });
+
+    it('should error when both --deny and --allow are provided', async () => {
+      const result = await runCLI([
+        '--upstream',
+        'http://localhost:3000',
+        '--deny',
+        'read_.*',
+        '--allow',
+        'write_.*',
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain('--deny and --allow cannot be used together');
+    });
+
+    it('should error when both -d and -a are provided', async () => {
+      const result = await runCLI([
+        '--upstream',
+        'http://localhost:3000',
+        '-d',
+        'read_.*',
+        '-a',
+        'write_.*',
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain('--deny and --allow cannot be used together');
+    });
+
+    it('should error when --deny and -a are provided', async () => {
+      const result = await runCLI([
+        '--upstream',
+        'http://localhost:3000',
+        '--deny',
+        'read_.*',
+        '-a',
+        'write_.*',
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain('--deny and --allow cannot be used together');
+    });
+
+    it('should error when -d and --allow are provided', async () => {
+      const result = await runCLI([
+        '--upstream',
+        'http://localhost:3000',
+        '-d',
+        'read_.*',
+        '--allow',
+        'write_.*',
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain('--deny and --allow cannot be used together');
+    });
+
+    it('should accept --allow with --list-tools', async () => {
+      const result = await runCLI([
+        '--upstream',
+        'http://localhost:3000',
+        '--list-tools',
+        '--allow',
+        'read_.*',
+      ], 500);
+
+      // Should not show CLI validation errors
+      expect(result.stderr).not.toContain('mutually exclusive');
+      expect(result.stderr).not.toContain('--deny and --allow cannot be used together');
+    });
+
+    it('should accept --allow with --header in HTTP mode', async () => {
+      const result = await runCLI([
+        '--upstream',
+        'http://localhost:3000',
+        '--allow',
+        'read_.*',
+        '--header',
+        'Authorization:Bearer token',
+      ], 500);
+
+      // Should not show CLI validation errors
+      expect(result.stderr).not.toContain('mutually exclusive');
+      expect(result.stderr).not.toContain('--deny and --allow cannot be used together');
+    });
+
+    it('should accept --allow with --env in stdio mode', async () => {
+      const result = await runCLI([
+        '--upstream-stdio',
+        '--allow',
+        'tool_.*',
+        '--env',
+        'API_KEY=secret',
+        '--',
+        'node',
+        'server.js',
+      ], 500);
+
+      // Should not show CLI validation errors
+      expect(result.stderr).not.toContain('mutually exclusive');
+      expect(result.stderr).not.toContain('--deny and --allow cannot be used together');
+      expect(result.stderr).toContain('Connecting to upstream MCP via stdio: node server.js');
+    });
+
+    it('should accept complex regex patterns in --allow', async () => {
+      const result = await runCLI([
+        '--upstream',
+        'http://localhost:3000',
+        '--allow',
+        '^(read|write)_.*,.*_database$',
+      ], 500);
+
+      // Should not show CLI validation errors
+      expect(result.stderr).not.toContain('mutually exclusive');
+      expect(result.stderr).not.toContain('--deny and --allow cannot be used together');
+    });
+
+    it('should accept empty --allow flag', async () => {
+      const result = await runCLI([
+        '--upstream',
+        'http://localhost:3000',
+        '--allow',
+        '',
+      ], 500);
+
+      // Should not show CLI validation errors
+      expect(result.stderr).not.toContain('mutually exclusive');
+      expect(result.stderr).not.toContain('--deny and --allow cannot be used together');
+    });
+
+    it('should update usage message to mention allow flag', async () => {
+      const result = await runCLI([
+        '--deny',
+        'test',
+      ]);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain('Either --upstream or --upstream-stdio is required');
+      expect(result.stderr).toContain('--allow');
+    });
+  });
 });

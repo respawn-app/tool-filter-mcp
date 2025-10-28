@@ -154,4 +154,68 @@ describe('filter', () => {
       expect(() => applyFilters(sampleTools, ['(a+)+'])).toThrow('Unsafe regex pattern');
     });
   });
+
+  describe('applyFilters - allow mode', () => {
+    it('should allow only tools matching allow patterns', () => {
+      const result = applyFilters(sampleTools, [], ['.*_file$'], 'allow');
+      expect(result.allowed).toHaveLength(2);
+      expect(result.allowed.map((t) => t.name)).toEqual(['read_file', 'write_file']);
+      expect(result.denied).toEqual(['list_dir', 'get_env', 'query_database']);
+      expect(result.invalidPatterns).toHaveLength(0);
+    });
+
+    it('should allow tools with multiple allow patterns', () => {
+      const result = applyFilters(sampleTools, [], ['^read_.*', '.*_database$'], 'allow');
+      expect(result.allowed).toHaveLength(2);
+      expect(result.allowed.map((t) => t.name)).toEqual(['read_file', 'query_database']);
+      expect(result.denied).toEqual(['write_file', 'list_dir', 'get_env']);
+    });
+
+    it('should deny all tools when no allow patterns provided', () => {
+      const result = applyFilters(sampleTools, [], [], 'allow');
+      expect(result.allowed).toHaveLength(0);
+      expect(result.denied).toHaveLength(5);
+      expect(result.invalidPatterns).toHaveLength(0);
+    });
+
+    it('should handle exact name allowing', () => {
+      const result = applyFilters(sampleTools, [], ['^read_file$', '^list_dir$'], 'allow');
+      expect(result.allowed).toHaveLength(2);
+      expect(result.allowed.map((t) => t.name)).toEqual(['read_file', 'list_dir']);
+      expect(result.denied).toEqual(['write_file', 'get_env', 'query_database']);
+    });
+
+    it('should allow all tools when pattern matches everything', () => {
+      const result = applyFilters(sampleTools, [], ['.*'], 'allow');
+      expect(result.allowed).toHaveLength(5);
+      expect(result.denied).toHaveLength(0);
+    });
+
+    it('should detect invalid patterns that match nothing in allow mode', () => {
+      const result = applyFilters(sampleTools, [], ['nonexistent_tool', '^xyz_.*'], 'allow');
+      expect(result.allowed).toHaveLength(0);
+      expect(result.denied).toHaveLength(5);
+      expect(result.invalidPatterns).toEqual(['nonexistent_tool', '^xyz_.*']);
+    });
+
+    it('should preserve tool order in allowed list', () => {
+      const result = applyFilters(sampleTools, [], ['^read_.*', '^get_.*'], 'allow');
+      expect(result.allowed.map((t) => t.name)).toEqual(['read_file', 'get_env']);
+    });
+
+    it('should handle pattern matching subset of tools in allow mode', () => {
+      const result = applyFilters(sampleTools, [], ['_file$'], 'allow');
+      expect(result.allowed.map((t) => t.name)).toEqual(['read_file', 'write_file']);
+      expect(result.denied).toEqual(['list_dir', 'get_env', 'query_database']);
+      expect(result.invalidPatterns).toHaveLength(0);
+    });
+
+    it('should throw on invalid regex pattern in allow mode', () => {
+      expect(() => applyFilters(sampleTools, [], ['^[a-z'], 'allow')).toThrow('Invalid regex pattern');
+    });
+
+    it('should throw on unsafe regex pattern in allow mode', () => {
+      expect(() => applyFilters(sampleTools, [], ['(a+)+'], 'allow')).toThrow('Unsafe regex pattern');
+    });
+  });
 });

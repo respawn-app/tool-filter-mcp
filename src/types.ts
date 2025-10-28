@@ -2,6 +2,8 @@ export type UpstreamMode = 'http' | 'stdio';
 
 export interface BaseProxyConfig {
   denyPatterns: string[];
+  allowPatterns: string[];
+  filterMode: 'deny' | 'allow';
   timeouts: {
     connection: number;
     toolList: number;

@@ -13,6 +13,8 @@ describe('MCPServer - Tool Filtering', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_file$'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -35,6 +37,8 @@ describe('MCPServer - Tool Filtering', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -57,6 +61,8 @@ describe('MCPServer - Tool Filtering', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -80,6 +86,8 @@ describe('MCPServer - Tool Filtering', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_file$'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -102,6 +110,8 @@ describe('MCPServer - Tool Filtering', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -126,6 +136,8 @@ describe('MCPServer - Tool Filtering', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_file$'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -148,6 +160,8 @@ describe('MCPServer - Tool Filtering', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_file$'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -173,6 +187,8 @@ describe('MCPServer - Tool Filtering', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['.*_file$'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -195,6 +211,8 @@ describe('MCPServer - Tool Filtering', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -214,6 +232,8 @@ describe('MCPServer - Tool Filtering', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -225,6 +245,155 @@ describe('MCPServer - Tool Filtering', () => {
 
       const server = new MCPServer(proxy);
       expect(server.supportsPrompts()).toBe(true);
+    });
+  });
+
+  describe('MCPServer - Tool Filtering - Allow Mode', () => {
+    describe('tools/list handler - allow mode', () => {
+      it('should return only allowed tools', async () => {
+        const mockUpstream = createMockServer(sampleTools);
+        const config: HttpProxyConfig = {
+          mode: 'http',
+          upstreamUrl: 'http://localhost:3000',
+          denyPatterns: [],
+          allowPatterns: ['.*_file$'],
+          filterMode: 'allow',
+          timeouts: {
+            connection: 30000,
+            toolList: 10000,
+          },
+        };
+
+        const proxy = new ProxyOrchestrator(config, mockUpstream as any);
+        await proxy.startup();
+
+        const server = new MCPServer(proxy);
+        const result = await server.handleListTools();
+
+        expect(result.tools).toHaveLength(2);
+        expect(result.tools.map((t) => t.name)).toEqual(['read_file', 'write_file']);
+      });
+
+      it('should return empty list when no allow patterns', async () => {
+        const mockUpstream = createMockServer(sampleTools);
+        const config: HttpProxyConfig = {
+          mode: 'http',
+          upstreamUrl: 'http://localhost:3000',
+          denyPatterns: [],
+          allowPatterns: [],
+          filterMode: 'allow',
+          timeouts: {
+            connection: 30000,
+            toolList: 10000,
+          },
+        };
+
+        const proxy = new ProxyOrchestrator(config, mockUpstream as any);
+        await proxy.startup();
+
+        const server = new MCPServer(proxy);
+        const result = await server.handleListTools();
+
+        expect(result.tools).toHaveLength(0);
+      });
+
+      it('should allow all tools when pattern matches everything', async () => {
+        const mockUpstream = createMockServer(sampleTools);
+        const config: HttpProxyConfig = {
+          mode: 'http',
+          upstreamUrl: 'http://localhost:3000',
+          denyPatterns: [],
+          allowPatterns: ['.*'],
+          filterMode: 'allow',
+          timeouts: {
+            connection: 30000,
+            toolList: 10000,
+          },
+        };
+
+        const proxy = new ProxyOrchestrator(config, mockUpstream as any);
+        await proxy.startup();
+
+        const server = new MCPServer(proxy);
+        const result = await server.handleListTools();
+
+        expect(result.tools).toHaveLength(4);
+        expect(result.tools).toEqual(sampleTools);
+      });
+
+      it('should allow multiple patterns', async () => {
+        const mockUpstream = createMockServer(sampleTools);
+        const config: HttpProxyConfig = {
+          mode: 'http',
+          upstreamUrl: 'http://localhost:3000',
+          denyPatterns: [],
+          allowPatterns: ['^read_.*', '^list_.*'],
+          filterMode: 'allow',
+          timeouts: {
+            connection: 30000,
+            toolList: 10000,
+          },
+        };
+
+        const proxy = new ProxyOrchestrator(config, mockUpstream as any);
+        await proxy.startup();
+
+        const server = new MCPServer(proxy);
+        const result = await server.handleListTools();
+
+        expect(result.tools).toHaveLength(2);
+        expect(result.tools.map((t) => t.name)).toEqual(['read_file', 'list_dir']);
+      });
+    });
+
+    describe('tools/call handler - allow mode', () => {
+      it('should forward allowed tool call to upstream', async () => {
+        const mockUpstream = createMockServer(sampleTools);
+        const config: HttpProxyConfig = {
+          mode: 'http',
+          upstreamUrl: 'http://localhost:3000',
+          denyPatterns: [],
+          allowPatterns: ['^list_.*', '^get_.*'],
+          filterMode: 'allow',
+          timeouts: {
+            connection: 30000,
+            toolList: 10000,
+          },
+        };
+
+        const proxy = new ProxyOrchestrator(config, mockUpstream as any);
+        await proxy.startup();
+
+        const server = new MCPServer(proxy);
+        const result = await server.handleCallTool('list_dir', { path: '/home' });
+
+        expect(result).toBeDefined();
+        expect(result).toHaveProperty('content');
+      });
+
+      it('should reject non-allowed tool call with error', async () => {
+        const mockUpstream = createMockServer(sampleTools);
+        const config: HttpProxyConfig = {
+          mode: 'http',
+          upstreamUrl: 'http://localhost:3000',
+          denyPatterns: [],
+          allowPatterns: ['^list_.*'],
+          filterMode: 'allow',
+          timeouts: {
+            connection: 30000,
+            toolList: 10000,
+          },
+        };
+
+        const proxy = new ProxyOrchestrator(config, mockUpstream as any);
+        await proxy.startup();
+
+        const server = new MCPServer(proxy);
+
+        await expect(server.handleCallTool('read_file', { path: '/test' })).rejects.toThrow(
+          'Tool not found: read_file'
+        );
+      });
     });
   });
 });

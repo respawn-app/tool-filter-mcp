@@ -12,6 +12,8 @@ describe('Filter All Tools', () => {
       mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['.*'],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -31,6 +33,8 @@ describe('Filter All Tools', () => {
       mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['.*'],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -52,6 +56,8 @@ describe('Filter All Tools', () => {
       mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['.*'],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -73,6 +79,8 @@ describe('Filter All Tools', () => {
       mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['.*_file$', '.*_dir$', '.*_env$', '.*_database$'],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -92,6 +100,8 @@ describe('Filter All Tools', () => {
       mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: ['.*'],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,
@@ -111,6 +121,8 @@ describe('Filter All Tools', () => {
       mode: 'http',
       upstreamUrl: 'http://localhost:3000',
       denyPatterns: [],
+        allowPatterns: [],
+        filterMode: 'deny',
       timeouts: {
         connection: 30000,
         toolList: 10000,

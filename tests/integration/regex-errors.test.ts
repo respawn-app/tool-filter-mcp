@@ -12,6 +12,8 @@ describe('Regex Error Handling', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['^[a-z'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -28,6 +30,8 @@ describe('Regex Error Handling', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['(abc'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -51,6 +55,8 @@ describe('Regex Error Handling', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['[unclosed'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -70,6 +76,8 @@ describe('Regex Error Handling', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['(a+)+'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -86,6 +94,8 @@ describe('Regex Error Handling', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['(x+)*'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -109,6 +119,8 @@ describe('Regex Error Handling', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['(a*)*'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -127,6 +139,8 @@ describe('Regex Error Handling', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['^valid$', '^[invalid', '^also_valid$'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,
@@ -143,6 +157,8 @@ describe('Regex Error Handling', () => {
         mode: 'http',
         upstreamUrl: 'http://localhost:3000',
         denyPatterns: ['^safe$', '(a+)+', '^also_safe$'],
+        allowPatterns: [],
+        filterMode: 'deny',
         timeouts: {
           connection: 30000,
           toolList: 10000,

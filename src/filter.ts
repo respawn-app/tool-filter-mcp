@@ -22,9 +22,12 @@ export class RegexFilter {
 
 export function applyFilters(
   tools: FilteredTool[],
-  denyPatterns: string[]
+  denyPatterns: string[],
+  allowPatterns: string[] = [],
+  mode: 'deny' | 'allow' = 'deny'
 ): ToolFilterResult {
-  if (denyPatterns.length === 0) {
+  // If in deny mode and no deny patterns, allow all tools
+  if (mode === 'deny' && denyPatterns.length === 0) {
     return {
       allowed: tools,
       denied: [],
@@ -32,7 +35,17 @@ export function applyFilters(
     };
   }
 
-  const filter = new RegexFilter(denyPatterns);
+  // If in allow mode and no allow patterns, deny all tools
+  if (mode === 'allow' && allowPatterns.length === 0) {
+    return {
+      allowed: [],
+      denied: tools.map((t) => t.name),
+      invalidPatterns: [],
+    };
+  }
+
+  const patterns = mode === 'deny' ? denyPatterns : allowPatterns;
+  const filter = new RegexFilter(patterns);
   const allowed: FilteredTool[] = [];
   const denied: string[] = [];
   const matchedPatterns = new Set<number>();
@@ -46,17 +59,27 @@ export function applyFilters(
       }
     }
 
-    if (matched) {
-      denied.push(tool.name);
+    // In deny mode: matched = denied, not matched = allowed
+    // In allow mode: matched = allowed, not matched = denied
+    if (mode === 'deny') {
+      if (matched) {
+        denied.push(tool.name);
+      } else {
+        allowed.push(tool);
+      }
     } else {
-      allowed.push(tool);
+      if (matched) {
+        allowed.push(tool);
+      } else {
+        denied.push(tool.name);
+      }
     }
   }
 
   const invalidPatterns: string[] = [];
-  for (let i = 0; i < denyPatterns.length; i++) {
+  for (let i = 0; i < patterns.length; i++) {
     if (!matchedPatterns.has(i)) {
-      invalidPatterns.push(denyPatterns[i]);
+      invalidPatterns.push(patterns[i]);
     }
   }
 
