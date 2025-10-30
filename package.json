@@ -1,7 +1,8 @@
 {
   "name": "@respawn-app/tool-filter-mcp",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "MCP proxy server that filters tools from upstream MCP servers via regex-based deny list",
+  "mcpName": "io.github.respawn-app/tool-filter-mcp",
   "type": "module",
   "bin": {
     "tool-filter-mcp": "dist/index.js"

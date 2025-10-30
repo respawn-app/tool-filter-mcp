@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "io.github.respawn-app/tool-filter-mcp",
+  "title": "Tool Filter MCP",
+  "description": "MCP proxy server that filters tools from upstream MCP servers via regex-based deny list",
+  "version": "0.4.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@respawn-app/tool-filter-mcp",
+      "version": "0.4.1",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
