@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseEnvVars } from '../../src/index.js';
+import { parseEnvVars } from '../../src/utils/env-parser.js';
 
 describe('env-parser', () => {
   describe('parseEnvVars', () => {

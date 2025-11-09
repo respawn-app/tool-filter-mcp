@@ -50,7 +50,7 @@ describe('CLI header support', () => {
       }
     });
 
-    const { createUpstreamClient } = await import('../../src/index.js');
+    const { createUpstreamClient } = await import('../../src/client.js');
 
     const headers = {
       Authorization: 'Bearer token',

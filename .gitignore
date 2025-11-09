@@ -16,3 +16,4 @@ coverage/
 /.idea/vcs.xml
 /docs/tmp/
 /specs/
+.mcpregistry_*

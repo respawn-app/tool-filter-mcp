@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatToolsList } from '../../src/index.js';
+import { formatToolsList } from '../../src/utils/tool-list-formatter.js';
 
 describe('formatToolsList', () => {
   const sampleTools = [

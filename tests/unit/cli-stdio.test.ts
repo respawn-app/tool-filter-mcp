@@ -7,11 +7,7 @@ describe('CLI stdio argument parsing', () => {
 
   function runCLI(args: string[], timeout: number = 2000): Promise<{ stdout: string; stderr: string; exitCode: number | null }> {
     return new Promise((resolve) => {
-      // Spawn process with clean environment to avoid test detection
-      const env = { ...process.env };
-      delete env.NODE_ENV;
-
-      const proc: ChildProcess = spawn('node', [cliPath, ...args], { env });
+      const proc: ChildProcess = spawn('node', [cliPath, ...args]);
       let stdout = '';
       let stderr = '';
       let resolved = false;
