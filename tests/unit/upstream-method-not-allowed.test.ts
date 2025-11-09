@@ -100,7 +100,7 @@ describe('createUpstreamClient 405 handling', () => {
       throw error;
     });
 
-    const { createUpstreamClient } = await import('../../src/index.js');
+    const { createUpstreamClient } = await import('../../src/client.js');
     const upstreamClient = await createUpstreamClient('https://example.com/mcp', {});
 
     await expect(upstreamClient.connect()).rejects.toThrow(
@@ -149,7 +149,7 @@ describe('createUpstreamClient 405 handling', () => {
       throw error;
     });
 
-    const { createUpstreamClient } = await import('../../src/index.js');
+    const { createUpstreamClient } = await import('../../src/client.js');
     const upstreamClient = await createUpstreamClient('https://example.com/mcp', {
       Authorization: 'Bearer token',
     });
@@ -180,7 +180,7 @@ describe('createUpstreamClient 405 handling', () => {
       throw new Error('SSE should not be attempted');
     });
 
-    const { createUpstreamClient } = await import('../../src/index.js');
+    const { createUpstreamClient } = await import('../../src/client.js');
     const upstreamClient = await createUpstreamClient('https://example.com/mcp', {});
 
     await expect(upstreamClient.connect()).resolves.toBeUndefined();
@@ -197,7 +197,7 @@ describe('createUpstreamClient 405 handling', () => {
       expect('terminateSession' in transport).toBe(false);
     });
 
-    const { createUpstreamClient } = await import('../../src/index.js');
+    const { createUpstreamClient } = await import('../../src/client.js');
     const upstreamClient = await createUpstreamClient('https://example.com/sse', {});
 
     await expect(upstreamClient.connect()).resolves.toBeUndefined();

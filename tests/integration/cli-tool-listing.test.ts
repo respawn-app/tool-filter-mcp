@@ -11,7 +11,7 @@ describe('CLI Tool Listing Integration Tests', () => {
       try {
         process.argv = ['node', 'index.js', '--list-tools'];
 
-        const { parseCLIArgs } = await import('../../src/index.js');
+        const { parseCLIArgs } = await import('../../src/cli-args.js');
         expect(() => parseCLIArgs()).toThrow();
       } finally {
         process.argv = originalArgv;
@@ -25,7 +25,7 @@ describe('CLI Tool Listing Integration Tests', () => {
         for (const format of ['table', 'json', 'names']) {
           process.argv = ['node', 'index.js', '--upstream', 'http://localhost:3000', '--list-tools', '--format', format];
 
-          const { parseCLIArgs } = await import('../../src/index.js');
+          const { parseCLIArgs } = await import('../../src/cli-args.js');
           const args = parseCLIArgs();
           expect(args.format).toBe(format);
         }
@@ -40,7 +40,7 @@ describe('CLI Tool Listing Integration Tests', () => {
       try {
         process.argv = ['node', 'index.js', '--upstream', 'http://localhost:3000', '--list-tools'];
 
-        const { parseCLIArgs } = await import('../../src/index.js');
+        const { parseCLIArgs } = await import('../../src/cli-args.js');
         const args = parseCLIArgs();
         expect(args.format).toBe('table');
       } finally {
@@ -63,7 +63,7 @@ describe('CLI Tool Listing Integration Tests', () => {
         const originalError = console.error;
         console.error = mockError;
 
-        const { parseCLIArgs } = await import('../../src/index.js');
+        const { parseCLIArgs } = await import('../../src/cli-args.js');
         parseCLIArgs();
 
         expect(mockExit).toHaveBeenCalledWith(1);
@@ -80,7 +80,7 @@ describe('CLI Tool Listing Integration Tests', () => {
 
   describe('output formatting', () => {
     it('should format tools as table correctly', async () => {
-      const { formatToolsList } = await import('../../src/index.js');
+      const { formatToolsList } = await import('../../src/utils/tool-list-formatter.js');
 
       const mockTools: Tool[] = [
         {
@@ -105,7 +105,7 @@ describe('CLI Tool Listing Integration Tests', () => {
     });
 
     it('should format tools as JSON correctly', async () => {
-      const { formatToolsList } = await import('../../src/index.js');
+      const { formatToolsList } = await import('../../src/utils/tool-list-formatter.js');
 
       const mockTools: Tool[] = [
         {
@@ -125,7 +125,7 @@ describe('CLI Tool Listing Integration Tests', () => {
     });
 
     it('should format tools as names correctly', async () => {
-      const { formatToolsList } = await import('../../src/index.js');
+      const { formatToolsList } = await import('../../src/utils/tool-list-formatter.js');
 
       const mockTools: Tool[] = [
         { name: 'tool_a', description: 'Tool A', inputSchema: { type: 'object' } },
@@ -141,7 +141,7 @@ describe('CLI Tool Listing Integration Tests', () => {
 
   describe('filter application', () => {
     it('should filter tools by deny patterns', async () => {
-      const { formatToolsList } = await import('../../src/index.js');
+      const { formatToolsList } = await import('../../src/utils/tool-list-formatter.js');
 
       const mockTools: Tool[] = [
         { name: 'read_file', description: 'Read file', inputSchema: { type: 'object' } },
@@ -163,7 +163,7 @@ describe('CLI Tool Listing Integration Tests', () => {
     });
 
     it('should handle empty filter list', async () => {
-      const { formatToolsList } = await import('../../src/index.js');
+      const { formatToolsList } = await import('../../src/utils/tool-list-formatter.js');
 
       const mockTools: Tool[] = [
         { name: 'read_file', description: 'Read file', inputSchema: { type: 'object' } },
@@ -192,7 +192,7 @@ describe('CLI Tool Listing Integration Tests', () => {
         const originalError = console.error;
         console.error = mockError;
 
-        const { parseCLIArgs } = await import('../../src/index.js');
+        const { parseCLIArgs } = await import('../../src/cli-args.js');
         parseCLIArgs();
 
         expect(mockExit).toHaveBeenCalledWith(1);
@@ -207,7 +207,7 @@ describe('CLI Tool Listing Integration Tests', () => {
     });
 
     it('should test proxy config creation', async () => {
-      const { createProxyConfig } = await import('../../src/index.js');
+      const { createProxyConfig } = await import('../../src/config.js');
 
       const args = {
         upstream: 'http://localhost:3000',
@@ -227,7 +227,7 @@ describe('CLI Tool Listing Integration Tests', () => {
 
   describe('stdout/stderr separation', () => {
     it('should output tools to stdout only', async () => {
-      const { formatToolsList } = await import('../../src/index.js');
+      const { formatToolsList } = await import('../../src/utils/tool-list-formatter.js');
 
       const mockTools: Tool[] = [
         { name: 'test_tool', description: 'Test tool', inputSchema: { type: 'object' } }
@@ -246,7 +246,7 @@ describe('CLI Tool Listing Integration Tests', () => {
 
   describe('description truncation', () => {
     it('should truncate long descriptions in table format', async () => {
-      const { truncateDescription } = await import('../../src/index.js');
+      const { truncateDescription } = await import('../../src/utils/tool-list-formatter.js');
 
       const longDesc = 'A'.repeat(150);
       const truncated = truncateDescription(longDesc, 100);
@@ -256,7 +256,7 @@ describe('CLI Tool Listing Integration Tests', () => {
     });
 
     it('should handle multi-line descriptions', async () => {
-      const { truncateDescription } = await import('../../src/index.js');
+      const { truncateDescription } = await import('../../src/utils/tool-list-formatter.js');
 
       const multiLineDesc = 'First line\nSecond line\nThird line';
       const truncated = truncateDescription(multiLineDesc, 100);
@@ -265,7 +265,7 @@ describe('CLI Tool Listing Integration Tests', () => {
     });
 
     it('should handle empty descriptions', async () => {
-      const { truncateDescription } = await import('../../src/index.js');
+      const { truncateDescription } = await import('../../src/utils/tool-list-formatter.js');
 
       expect(truncateDescription('', 100)).toBe('');
       expect(truncateDescription('', 10)).toBe('');

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createStdioUpstreamClient } from '../../src/index.js';
+import { createStdioUpstreamClient } from '../../src/client.js';
 import { createMockServer } from '../fixtures/mock-mcp-server.js';
 import { sampleTools } from '../fixtures/sample-tools.js';
 import { StdioProxyConfig } from '../../src/types.js';
