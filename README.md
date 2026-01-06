@@ -330,3 +330,5 @@ Only applicable with `--upstream-stdio`:
 ## License
 
 MIT
+
+Copyright (c) 2026 Respawn LLC
