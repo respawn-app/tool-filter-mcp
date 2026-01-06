@@ -1,23 +1,38 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-const sseTransportMock = vi.hoisted(() => vi.fn(() => ({
-  close: vi.fn().mockResolvedValue(undefined),
-})));
-
-const streamableTransportMock = vi.hoisted(() => vi.fn(() => ({
-  close: vi.fn().mockResolvedValue(undefined),
-  terminateSession: vi.fn().mockResolvedValue(undefined),
-})));
+const sseTransportCtorSpy = vi.hoisted(() => vi.fn());
+const streamableTransportCtorSpy = vi.hoisted(() => vi.fn());
 
 const clientConnectMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@modelcontextprotocol/sdk/client/sse.js', () => ({
-  SSEClientTransport: sseTransportMock,
-}));
+vi.mock('@modelcontextprotocol/sdk/client/sse.js', () => {
+  class MockSSEClientTransport {
+    constructor(url: URL, options: Record<string, unknown>) {
+      sseTransportCtorSpy(url, options);
+    }
 
-vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', () => ({
-  StreamableHTTPClientTransport: streamableTransportMock,
-}));
+    close = vi.fn().mockResolvedValue(undefined);
+  }
+
+  return {
+    SSEClientTransport: MockSSEClientTransport,
+  };
+});
+
+vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', () => {
+  class MockStreamableHTTPClientTransport {
+    constructor(url: URL, options: Record<string, unknown>) {
+      streamableTransportCtorSpy(url, options);
+    }
+
+    close = vi.fn().mockResolvedValue(undefined);
+    terminateSession = vi.fn().mockResolvedValue(undefined);
+  }
+
+  return {
+    StreamableHTTPClientTransport: MockStreamableHTTPClientTransport,
+  };
+});
 
 vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
   class MockClient {
@@ -34,8 +49,8 @@ vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
 
 describe('CLI header support', () => {
   beforeEach(() => {
-    sseTransportMock.mockClear();
-    streamableTransportMock.mockClear();
+    sseTransportCtorSpy.mockClear();
+    streamableTransportCtorSpy.mockClear();
     clientConnectMock.mockReset();
   });
 
@@ -61,8 +76,8 @@ describe('CLI header support', () => {
 
     await expect(upstreamClient.connect()).resolves.toBeUndefined();
 
-    expect(streamableTransportMock).toHaveBeenCalledTimes(1);
-    expect(streamableTransportMock).toHaveBeenCalledWith(
+    expect(streamableTransportCtorSpy).toHaveBeenCalledTimes(1);
+    expect(streamableTransportCtorSpy).toHaveBeenCalledWith(
       new URL('https://example.com/mcp'),
       {
         fetch: expect.any(Function),
@@ -70,8 +85,8 @@ describe('CLI header support', () => {
       }
     );
 
-    expect(sseTransportMock).toHaveBeenCalledTimes(1);
-    expect(sseTransportMock).toHaveBeenCalledWith(
+    expect(sseTransportCtorSpy).toHaveBeenCalledTimes(1);
+    expect(sseTransportCtorSpy).toHaveBeenCalledWith(
       new URL('https://example.com/mcp'),
       {
         eventSourceInit: {

@@ -4,7 +4,7 @@
 
 MCP proxy server that filters tools from upstream MCP servers via regex-based deny list.
 
-#### Maintained: ✅ Yes (Fall 2025)
+#### Maintained: ✅ Yes (Winter 2026)
 
 ## Why use this?
 
@@ -330,3 +330,5 @@ Only applicable with `--upstream-stdio`:
 ## License
 
 MIT
+
+Copyright (c) 2026 Respawn LLC
