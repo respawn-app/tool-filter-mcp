@@ -4,7 +4,7 @@
 
 MCP proxy server that filters tools from upstream MCP servers via regex-based deny list.
 
-#### Maintained: ✅ Yes (Winter 2025-26)
+#### Maintained: ✅ Yes (Spring/summer 26)
 
 ## Why use this?
 
@@ -16,17 +16,7 @@ is catastrophic to the context and leads to context pollution by 40-60k of **use
 You wanted your agent to be able to see jira ticket descriptions?
 Please also have these 44 useless tools to edit assignees on confluence pages.
 
-This MCP completely solves the issue without introducing any overhead.
-This project is fully vibe-coded with claude. Contributions welcome!
-
-## Features
-
-- **Tool Filtering**: Block specific tools using regex patterns
-- **Tool Discovery**: List available tools with multiple output formats (table, JSON, names)
-- **Header Pass-Through**: Add custom HTTP headers for authentication
-- **Zero Latency**: Cached tool list, minimal overhead
-- **Fail-Fast**: Immediate error on connection issues or invalid patterns
-- **Transparent Proxying**: Forwards allowed tool calls to upstream without modification
+This MCP completely solves the issue without introducing any overhead. Contributions welcome!
 
 ## Installation
 
