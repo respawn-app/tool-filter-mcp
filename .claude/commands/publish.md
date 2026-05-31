@@ -63,7 +63,7 @@ gh release create v0.2.0 --title "v0.2.0 - HTTP Header Pass-Through" --notes "##
 - Add HTTP header pass-through for authentication
 - Environment variable expansion support
 
-**Full Changelog**: https://github.com/respawn-app/tool-filter-mcp/compare/v0.1.0...v0.2.0"
+**Full Changelog**: https://github.com/respawn-llc/tool-filter-mcp/compare/v0.1.0...v0.2.0"
 ```
 
 ## Verification
@@ -71,7 +71,7 @@ gh release create v0.2.0 --title "v0.2.0 - HTTP Header Pass-Through" --notes "##
 After publishing:
 
 - Check npm: https://www.npmjs.com/package/@respawn-app/tool-filter-mcp
-- Check GitHub releases: https://github.com/respawn-app/tool-filter-mcp/releases
+- Check GitHub releases: https://github.com/respawn-llc/tool-filter-mcp/releases
 - Test installation: `npx @respawn-app/tool-filter-mcp@latest --help`
 
 ## Requirements
